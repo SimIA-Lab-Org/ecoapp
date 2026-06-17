@@ -7,7 +7,7 @@ EcoApp SimIA es una herramienta de simulación clínica de bajo coste diseñada 
 
 ## 🚀 Arquitectura Técnica
 * **100% Web:** No requiere la instalación de archivos APK ni software de terceros.
-* **Comunicación P2P:** Conexión directa entre la tablet del instructor (Monitor de Control) y la pantalla del alumno (Monitor de Eco) mediante WebRTC.
+* **Comunicación Socket:**
 * **Sesiones Simultáneas:** Sistema de "salas virtuales" para aislar diferentes escenarios clínicos ocurriendo en tiempo real en el laboratorio.
 
 ## ⚙️ Estado del Desarrollo

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Eco · EcoApp SimIA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Reproductor */
+    #eco-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Pantalla de espera */
+    #eco-espera {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: rgba(255,255,255,0.25);
+    }
+    #eco-espera .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: rgba(255,255,255,0.15);
+    }
+    #eco-espera .icon { font-size: 52px; }
+    #eco-espera p { font-size: 16px; }
+
+    /* Pantalla negra */
+    #eco-negro {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 20;
+      display: none;
+    }
+
+    /* Badge congelado */
+    #eco-frozen {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.55);
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      z-index: 10;
+      display: none;
+      backdrop-filter: blur(4px);
+    }
+
+    /* Badge zona (muestra qué punto está activo) */
+    #eco-zona {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      color: rgba(255,255,255,0.75);
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      z-index: 10;
+      display: none;
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="eco-video" autoplay loop muted playsinline></video>
+
+  <div id="eco-espera">
+    <div class="logo">EcoApp SimIA</div>
+    <div class="icon">◎</div>
+    <p>Esperando imagen del instructor...</p>
+  </div>
+
+  <div id="eco-negro"></div>
+  <div id="eco-frozen">⏸ Imagen congelada</div>
+  <div id="eco-zona"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-transporte.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sala = params.get('sala');
+    if (!sala) {
+      alert('No se ha indicado ninguna sala. Volviendo al inicio.');
+      window.location.href = '/';
+    }
+    const socket  = crearTransporte(sala, 'eco');
+    const video    = document.getElementById('eco-video');
+    const espera   = document.getElementById('eco-espera');
+    const negro    = document.getElementById('eco-negro');
+    const frozen   = document.getElementById('eco-frozen');
+    const zonaEl   = document.getElementById('eco-zona');
+
+    // Estado inicial al conectarse
+    socket.on('estado-inicial', (estado) => {
+      if (estado.clip)      cargarClip(estado.clip);
+      if (estado.congelado) congelar(true);
+      if (estado.negro)     pantallaNegraActivar(true);
+    });
+
+    // Clip cambiado
+    socket.on('clip-cambiado', (clip) => {
+      if (clip) cargarClip(clip);
+      else      limpiarVideo();
+    });
+
+    // Congelar
+    socket.on('imagen-congelada', congelar);
+
+    // Pantalla negra
+    socket.on('pantalla-negra', pantallaNegraActivar);
+
+    function cargarClip(clip) {
+      espera.style.display = 'none';
+      video.src = clip.archivo;
+      video.play().catch(() => {});
+      // Solo se muestra la zona anatómica (p. ej. "Pulmonar apical derecho"),
+      // nunca el nombre del hallazgo: el alumno debe interpretar él mismo
+      // si lo que ve es normal o patológico.
+      if (clip.zona) {
+        zonaEl.textContent   = clip.zona;
+        zonaEl.style.display = 'block';
+      } else {
+        zonaEl.style.display = 'none';
+      }
+    }
+
+    function limpiarVideo() {
+      video.pause();
+      video.src            = '';
+      espera.style.display = 'flex';
+      zonaEl.style.display = 'none';
+      frozen.style.display = 'none';
+    }
+
+    function congelar(valor) {
+      if (valor) {
+        video.pause();
+        frozen.style.display = 'block';
+      } else {
+        video.play().catch(() => {});
+        frozen.style.display = 'none';
+      }
+    }
+
+    function pantallaNegraActivar(valor) {
+      negro.style.display = valor ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>

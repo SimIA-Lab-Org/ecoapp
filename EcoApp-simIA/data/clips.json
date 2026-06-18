@@ -1,0 +1,317 @@
+[
+  {
+    "zona": "pulmonar-apical-d",
+    "titulo": "Pulmonar apical derecho",
+    "icono": "icono-pulmon",
+    "clips": [
+      {
+        "id": "pad-01",
+        "nombre": "Normal",
+        "sub": "Deslizamiento pleural presente",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pad-02",
+        "nombre": "Neumotórax",
+        "sub": "Ausencia de deslizamiento",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pad-03",
+        "nombre": "Derrame pleural",
+        "sub": "Imagen en sello",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "pulmonar-apical-i",
+    "titulo": "Pulmonar apical izquierdo",
+    "icono": "icono-pulmon",
+    "clips": [
+      {
+        "id": "pai-01",
+        "nombre": "Normal",
+        "sub": "Deslizamiento pleural presente",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pai-02",
+        "nombre": "Neumotórax",
+        "sub": "Ausencia de deslizamiento",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pai-03",
+        "nombre": "Líneas B",
+        "sub": "Edema pulmonar",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "pulmonar-basal-d",
+    "titulo": "Pulmonar basal derecho",
+    "icono": "icono-pulmon",
+    "clips": [
+      {
+        "id": "pbd-01",
+        "nombre": "Normal",
+        "sub": "Sin líquido pleural",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pbd-02",
+        "nombre": "Derrame pleural",
+        "sub": "Líquido basal derecho",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "pulmonar-basal-i",
+    "titulo": "Pulmonar basal izquierdo",
+    "icono": "icono-pulmon",
+    "clips": [
+      {
+        "id": "pbi-01",
+        "nombre": "Normal",
+        "sub": "Sin líquido pleural",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "pbi-02",
+        "nombre": "Derrame pleural",
+        "sub": "Líquido basal izquierdo",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "cardiaco-eje",
+    "titulo": "Cardíaco — eje largo y corto",
+    "icono": "icono-corazon",
+    "clips": [
+      {
+        "id": "ce-01",
+        "nombre": "Normal",
+        "sub": "Función ventricular conservada",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "ce-02",
+        "nombre": "Disfunción VI",
+        "sub": "Fracción de eyección reducida",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "ce-03",
+        "nombre": "Derrame pericárdico",
+        "sub": "Halo anecoico pericardiaco",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "cardiaco-apical",
+    "titulo": "Cardíaco — apical 4 cámaras",
+    "icono": "icono-corazon",
+    "clips": [
+      {
+        "id": "ca-01",
+        "nombre": "Normal",
+        "sub": "4 cámaras simétricas",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "ca-02",
+        "nombre": "Dilatación VD",
+        "sub": "Sospecha de TEP",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "ca-03",
+        "nombre": "Taponamiento",
+        "sub": "Colapso diastólico AD",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "cardiaco-subcostal",
+    "titulo": "Cardíaco — subcostal",
+    "icono": "icono-corazon",
+    "clips": [
+      {
+        "id": "cs-01",
+        "nombre": "Normal",
+        "sub": "VCI colapsable > 50%",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "cs-02",
+        "nombre": "VCI dilatada",
+        "sub": "Sin colapso inspiratorio",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "grandes-vasos",
+    "titulo": "Grandes vasos — aorta y VCI",
+    "icono": "icono-aorta",
+    "clips": [
+      {
+        "id": "gv-01",
+        "nombre": "Aorta normal",
+        "sub": "Diámetro < 3 cm",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "gv-02",
+        "nombre": "Aneurisma aórtico",
+        "sub": "AAA mayor de 5 cm",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "gv-03",
+        "nombre": "VCI normal",
+        "sub": "Colapsable con inspiración",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "morrison",
+    "titulo": "Espacio de Morrison — hepatorrenal",
+    "icono": "icono-riñon",
+    "clips": [
+      {
+        "id": "mo-01",
+        "nombre": "Normal",
+        "sub": "Sin líquido libre",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "mo-02",
+        "nombre": "FAST positivo",
+        "sub": "Líquido libre derecho",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "esplenorenal",
+    "titulo": "Esplenorrenal — izquierdo",
+    "icono": "icono-riñon",
+    "clips": [
+      {
+        "id": "es-01",
+        "nombre": "Normal",
+        "sub": "Sin líquido libre",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "es-02",
+        "nombre": "FAST positivo",
+        "sub": "Líquido libre izquierdo",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "douglas",
+    "titulo": "Fondo de saco de Douglas",
+    "icono": "icono-utero",
+    "clips": [
+      {
+        "id": "do-01",
+        "nombre": "Normal",
+        "sub": "Sin líquido pélvico",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "do-02",
+        "nombre": "Líquido pélvico",
+        "sub": "FAST pélvico positivo",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "venas-d",
+    "titulo": "Venas MMII — miembro inferior derecho",
+    "icono": "icono-miembros-inferiores",
+    "clips": [
+      {
+        "id": "vd-01",
+        "nombre": "Normal",
+        "sub": "Compresibilidad conservada",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "vd-02",
+        "nombre": "TVP femoral",
+        "sub": "Trombo agudo no compresible",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "vd-03",
+        "nombre": "TVP poplítea",
+        "sub": "Vena poplítea ocluida",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  },
+  {
+    "zona": "venas-i",
+    "titulo": "Venas MMII — miembro inferior izquierdo",
+    "icono": "icono-miembros-inferiores",
+    "clips": [
+      {
+        "id": "vi-01",
+        "nombre": "Normal",
+        "sub": "Compresibilidad conservada",
+        "patologico": false,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      },
+      {
+        "id": "vi-02",
+        "nombre": "TVP femoral",
+        "sub": "Trombo agudo no compresible",
+        "patologico": true,
+        "archivo": "/videos/prueba/18-semanas.mp4"
+      }
+    ]
+  }
+]

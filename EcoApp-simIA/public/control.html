@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Control · EcoApp SimIA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f0f2f5;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.1);
+      --text:      #111;
+      --muted:     #666;
+      --blue:      #1a56a0;
+      --blue-l:    #e8f0fb;
+      --teal:      #0d6b53;
+      --teal-l:    #e0f4ee;
+      --red:       #a32020;
+      --red-l:     #fbeaea;
+      --green:     #1e6b2e;
+      --green-l:   #e4f5e8;
+      --amber:     #7a4800;
+      --amber-l:   #fef3e0;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
+      position: relative;
+    }
+    .header-back {
+      font-size: 13px; color: var(--muted);
+      text-decoration: none; padding: 4px 8px;
+      border-radius: 6px; transition: background 0.1s;
+    }
+    .header-back:hover { background: var(--bg); }
+    .header-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .header-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+    }
+    .header-logo { height: 18px; width: auto; display: block; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .conn-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+    .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+    .conn-dot.on { background: #3aaa5e; }
+    .timer { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 34px; }
+
+    /* ── MAIN: silueta grande y centrada ── */
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    .silueta-panel {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.06);
+      height: 100%;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .silueta-wrap {
+      position: relative;
+      height: 100%;
+      display: inline-block;
+    }
+
+    .silueta-wrap img {
+      height: 100%;
+      width: auto;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Botones sobre la silueta */
+    .probe {
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2.5px solid transparent;
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      padding: 0;
+      overflow: hidden;
+      z-index: 5;
+    }
+    .probe:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    }
+    .probe.activo {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(26,86,160,0.2);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    /* Estado de emisión: blanco → verde (normal) / rojo (patológico) */
+    .probe.emit-normal {
+      background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(30,107,46,0.25), 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .probe.emit-patologico {
+      background: var(--red);
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(163,32,32,0.25), 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .probe.emit-normal img,
+    .probe.emit-patologico img {
+      filter: brightness(0) invert(1);
+    }
+
+    .probe img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .probe-num {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 18px; height: 18px;
+      background: var(--blue);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── DESPLEGABLE DE CLIPS (anclado al icono pulsado) ── */
+    .probe-dropdown {
+      display: none;
+      position: absolute;
+      z-index: 30;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.2);
+      overflow: hidden;
+      max-height: 340px;
+      flex-direction: column;
+    }
+    .probe-dropdown.visible { display: flex; }
+
+    .dropdown-header {
+      padding: 14px 16px 10px;
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .dropdown-header strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
+    .dropdown-header span   { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .dropdown-clips {
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .clip-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .clip-card.emitiendo {
+      border: 1.5px solid var(--teal);
+      background: var(--teal-l);
+    }
+
+    .clip-info { flex: 1; min-width: 0; }
+    .clip-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .clip-sub    { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .clip-badge {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      font-weight: 500;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .badge-n { background: var(--green-l); color: var(--green); }
+    .badge-p { background: var(--red-l);   color: var(--red); }
+
+    .clip-btn {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .clip-btn:hover { background: #e4e6e9; }
+    .clip-btn.on {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal);
+    }
+
+    /* ── NOW PLAYING ── */
+    .now-playing {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--teal-l);
+      border-radius: 10px;
+      font-size: 12px;
+      margin: 0 16px 10px;
+      flex-shrink: 0;
+    }
+    .now-playing.visible { display: flex; }
+    .now-playing-label { color: var(--teal); font-weight: 600; flex-shrink: 0; }
+    .now-playing-titulo { color: var(--text); flex: 1; font-size: 13px; }
+
+    /* ── FOOTER ACCIONES ── */
+    .footer {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .foot-btn {
+      flex: 1;
+      padding: 9px 8px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .foot-btn:hover { background: #e4e6e9; }
+    .foot-btn.congelado { background: var(--amber-l); color: var(--amber); border-color: #e8c870; }
+    .foot-btn.negro-on  { background: #222; color: #fff; border-color: #222; }
+    .foot-btn.detener   { color: var(--red); }
+    .foot-btn.detener:hover { background: var(--red-l); }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="/" class="header-back">← Inicio</a>
+    <span class="header-title">Panel de control</span>
+    <div class="header-center">
+      <img src="/images/logo-simia.png" alt="SimIA" class="header-logo">
+    </div>
+    <div class="header-right">
+      <div class="conn-status">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span id="conn-texto">Conectando...</span>
+      </div>
+      <span class="timer" id="timer">00:00</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="silueta-panel">
+      <div class="silueta-wrap" id="silueta-wrap">
+        <img src="/images/silueta-anatomica.svg" alt="Silueta anatómica" id="silueta-img">
+
+        <!-- 1. Pulmonar apical D -->
+        <button class="probe" style="left:30%;top:22%" data-zona="pulmonar-apical-d" title="Pulmonar apical derecho">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+          <span class="probe-num">1</span>
+        </button>
+        <!-- 1. Pulmonar apical I -->
+        <button class="probe" style="left:70%;top:22%" data-zona="pulmonar-apical-i" title="Pulmonar apical izquierdo">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+          <span class="probe-num">1</span>
+        </button>
+
+        <!-- 2. Pulmonar basal D -->
+        <button class="probe" style="left:22%;top:38%" data-zona="pulmonar-basal-d" title="Pulmonar basal derecho">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+          <span class="probe-num">2</span>
+        </button>
+        <!-- 2. Pulmonar basal I -->
+        <button class="probe" style="left:78%;top:38%" data-zona="pulmonar-basal-i" title="Pulmonar basal izquierdo">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+          <span class="probe-num">2</span>
+        </button>
+
+        <!-- 3. Cardíaco eje largo/corto -->
+        <button class="probe" style="left:50%;top:28%" data-zona="cardiaco-eje" title="Cardíaco eje largo y corto">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+          <span class="probe-num">3</span>
+        </button>
+
+        <!-- 4. Cardíaco apical -->
+        <button class="probe" style="left:38%;top:35%" data-zona="cardiaco-apical" title="Cardíaco apical">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+          <span class="probe-num">4</span>
+        </button>
+
+        <!-- 5. Cardíaco subcostal -->
+        <button class="probe" style="left:50%;top:42%" data-zona="cardiaco-subcostal" title="Cardíaco subcostal">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+          <span class="probe-num">5</span>
+        </button>
+
+        <!-- 6. Grandes vasos -->
+        <button class="probe" style="left:50%;top:50%" data-zona="grandes-vasos" title="Grandes vasos">
+          <img src="/images/icono-aorta.png" alt="Aorta">
+          <span class="probe-num">6</span>
+        </button>
+
+        <!-- 7. Morrison D -->
+        <button class="probe" style="left:28%;top:55%" data-zona="morrison" title="Espacio de Morrison">
+          <img src="/images/icono-rinon.png" alt="Riñón">
+          <span class="probe-num">7</span>
+        </button>
+        <!-- 7. Esplenorrenal I -->
+        <button class="probe" style="left:72%;top:55%" data-zona="esplenorenal" title="Esplenorrenal">
+          <img src="/images/icono-rinon.png" alt="Riñón">
+          <span class="probe-num">7</span>
+        </button>
+
+        <!-- 8. Douglas -->
+        <button class="probe" style="left:50%;top:64%" data-zona="douglas" title="Douglas">
+          <img src="/images/icono-utero.png" alt="Útero">
+          <span class="probe-num">8</span>
+        </button>
+
+        <!-- 9. Venas MMII D -->
+        <button class="probe" style="left:34%;top:80%" data-zona="venas-d" title="Venas MMII derecho">
+          <img src="/images/icono-miembros-inferiores.png" alt="Venas">
+          <span class="probe-num">9</span>
+        </button>
+        <!-- 9. Venas MMII I -->
+        <button class="probe" style="left:66%;top:80%" data-zona="venas-i" title="Venas MMII izquierdo">
+          <img src="/images/icono-miembros-inferiores.png" alt="Venas">
+          <span class="probe-num">9</span>
+        </button>
+
+        <!-- Desplegable de clips: se reposiciona y repuebla con JS -->
+        <div class="probe-dropdown" id="probe-dropdown">
+          <div class="dropdown-header">
+            <strong id="dd-titulo"></strong>
+            <span id="dd-sub"></span>
+          </div>
+          <div class="dropdown-clips" id="dd-clips"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="now-playing" id="now-playing">
+    <span class="now-playing-label">Emitiendo</span>
+    <span class="now-playing-titulo" id="now-playing-titulo"></span>
+  </div>
+
+  <footer class="footer">
+    <button class="foot-btn" id="btn-congelar">⏸ Congelar</button>
+    <button class="foot-btn" id="btn-negro">■ Pantalla negra</button>
+    <button class="foot-btn detener" id="btn-detener">✕ Detener</button>
+  </footer>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-transporte.js"></script>
+  <script src="/control.js"></script>
+</body>
+</html>

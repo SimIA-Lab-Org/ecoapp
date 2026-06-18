@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoApp SimIA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --text: #111;
+      --muted: #666;
+      --blue: #1a56a0;
+      --blue-l: #e8f0fb;
+      --teal: #0d6b53;
+      --teal-l: #e0f4ee;
+      --red: #a32020;
+      --red-l: #fbeaea;
+      --green: #1e6b2e;
+      --green-l: #e4f5e8;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 22px;
+      padding: 3rem 2.5rem;
+      width: 92%;
+      max-width: 460px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .logo {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--blue);
+      margin-bottom: 6px;
+    }
+    .sub { font-size: 14px; color: var(--muted); margin-bottom: 2.5rem; }
+
+    .btns { display: flex; flex-direction: column; gap: 14px; }
+    .btn {
+      display: flex; align-items: center; gap: 16px;
+      padding: 20px 22px;
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--bg);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      width: 100%;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--surface); border-color: rgba(0,0,0,0.2); }
+    .btn-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .btn-crear .btn-icon  { background: var(--blue-l); color: var(--blue); }
+    .btn-unirse .btn-icon { background: var(--teal-l); color: var(--teal); }
+    .btn-text strong { display: block; font-size: 16px; font-weight: 500; color: var(--text); }
+    .btn-text small  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .footer-logo {
+      margin-top: 2rem;
+      font-size: 12px;
+      color: #bbb;
+      letter-spacing: 0.04em;
+    }
+    .footer-brand-img {
+      display: block;
+      height: 18px;
+      width: auto;
+      margin: 10px auto 0;
+      opacity: 0.8;
+    }
+
+    /* ── Pantallas adicionales del Lobby ── */
+    .pantalla { display: none; }
+    .pantalla.visible { display: block; }
+
+    .codigo-grande {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: var(--blue);
+      margin: 1.2rem 0;
+    }
+    input.input-codigo {
+      width: 100%;
+      padding: 14px 16px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 18px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    .btn-accion {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: var(--blue);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-volver {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+    .sala-actual {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+    .sala-actual strong { color: var(--text); letter-spacing: 2px; }
+
+    .rol-btn {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      background: var(--bg);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: inherit;
+    }
+    .rol-btn:hover:not(:disabled) { background: #e4e6e9; }
+    .rol-btn:disabled {
+      background: #f3f3f3;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .rol-btn .estado { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- Pantalla 1: Lobby inicial -->
+    <div class="pantalla visible" id="pantalla-inicio">
+      <div class="logo">EcoApp</div>
+      <p class="sub">Simulador de ecografía</p>
+
+      <div class="btns">
+        <button class="btn btn-crear" id="btn-crear">
+          <div class="btn-icon">➕</div>
+          <div class="btn-text">
+            <strong>Crear sesión activa</strong>
+            <small>Genera un código nuevo para empezar</small>
+          </div>
+        </button>
+        <button class="btn btn-unirse" id="btn-unirse">
+          <div class="btn-icon">🔑</div>
+          <div class="btn-text">
+            <strong>Unirse a sesión</strong>
+            <small>Introduce el código que te han dado</small>
+          </div>
+        </button>
+      </div>
+
+      <p class="footer-logo">ISABIAL · Hospital General Universitario Dr. Balmis</p>
+      <img src="/images/logo-simia.png" alt="SimIA" class="footer-brand-img">
+    </div>
+
+    <!-- Pantalla 2a: código generado -->
+    <div class="pantalla" id="pantalla-codigo">
+      <div class="logo" style="font-size:22px;">Sesión creada</div>
+      <p class="sub">Comparte este código con el otro dispositivo</p>
+      <div class="codigo-grande" id="codigo-generado"></div>
+      <button class="btn-accion" id="btn-continuar-creada">Continuar</button>
+      <button class="btn-volver" id="btn-volver-1">← Volver</button>
+    </div>
+
+    <!-- Pantalla 2b: unirse con código -->
+    <div class="pantalla" id="pantalla-unirse">
+      <div class="logo" style="font-size:22px;">Unirse a sesión</div>
+      <p class="sub">Escribe el código de la sesión</p>
+      <input class="input-codigo" id="input-codigo" placeholder="ABCDE" maxlength="8">
+      <button class="btn-accion" id="btn-entrar">Entrar</button>
+      <button class="btn-volver" id="btn-volver-2">← Volver</button>
+    </div>
+
+    <!-- Pantalla 3: selección de rol -->
+    <div class="pantalla" id="pantalla-rol">
+      <div class="logo" style="font-size:22px;">Elige tu pantalla</div>
+      <p class="sala-actual">Sala: <strong id="sala-mostrada"></strong></p>
+
+      <button class="rol-btn" id="rol-control" disabled>
+        <span>⚙ Monitor de Control</span>
+        <span class="estado" id="estado-control">comprobando...</span>
+      </button>
+      <button class="rol-btn" id="rol-eco" disabled>
+        <span>◎ Monitor de Eco</span>
+        <span class="estado" id="estado-eco">comprobando...</span>
+      </button>
+
+      <button class="btn-volver" id="btn-volver-3">← Volver al lobby</button>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let sala = null;
+    const socket = io();
+
+    function mostrarPantalla(id) {
+      document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('visible'));
+      document.getElementById(id).classList.add('visible');
+    }
+
+    function limpiarCodigo(texto) {
+      return texto.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    function generarCodigo() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O ni 1/I
+      let codigo = '';
+      for (let i = 0; i < 5; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+      return codigo;
+    }
+
+    // ── Comprobar disponibilidad de roles, preguntando al servidor ────
+    function comprobarRoles() {
+      document.getElementById('sala-mostrada').textContent = sala;
+
+      const controlBtn = document.getElementById('rol-control');
+      const ecoBtn      = document.getElementById('rol-eco');
+      document.getElementById('estado-control').textContent = 'comprobando...';
+      document.getElementById('estado-eco').textContent = 'comprobando...';
+      controlBtn.disabled = true;
+      ecoBtn.disabled = true;
+
+      socket.emit('comprobar-sala', sala);
+    }
+
+    socket.on('estado-sala', (datos) => {
+      const controlBtn = document.getElementById('rol-control');
+      const ecoBtn      = document.getElementById('rol-eco');
+      controlBtn.disabled = datos.controlOcupado;
+      ecoBtn.disabled = datos.ecoOcupado;
+      document.getElementById('estado-control').textContent = datos.controlOcupado ? '🔒 ocupado' : 'disponible';
+      document.getElementById('estado-eco').textContent = datos.ecoOcupado ? '🔒 ocupado' : 'disponible';
+    });
+
+    function elegirRol(rol) {
+      const destino = rol === 'control' ? '/control.html' : '/eco.html';
+      window.location.href = `${destino}?sala=${encodeURIComponent(sala)}`;
+    }
+
+    // ── Navegación ──────────────────────────────────────────────────
+    document.getElementById('btn-crear').addEventListener('click', () => {
+      sala = generarCodigo();
+      document.getElementById('codigo-generado').textContent = sala;
+      mostrarPantalla('pantalla-codigo');
+    });
+
+    document.getElementById('btn-continuar-creada').addEventListener('click', () => {
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    });
+
+    document.getElementById('btn-unirse').addEventListener('click', () => {
+      mostrarPantalla('pantalla-unirse');
+    });
+
+    document.getElementById('btn-entrar').addEventListener('click', () => {
+      const codigo = limpiarCodigo(document.getElementById('input-codigo').value);
+      if (!codigo) return;
+      sala = codigo;
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    });
+
+    document.getElementById('rol-control').addEventListener('click', () => elegirRol('control'));
+    document.getElementById('rol-eco').addEventListener('click', () => elegirRol('eco'));
+
+    document.getElementById('btn-volver-1').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
+    document.getElementById('btn-volver-2').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
+    document.getElementById('btn-volver-3').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
+  </script>
+</body>
+</html>

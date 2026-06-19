@@ -34,6 +34,14 @@
       overflow: hidden;
     }
 
+    .app-contenido {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
     /* ── HEADER ── */
     .header {
       display: flex; align-items: center; justify-content: space-between;
@@ -42,7 +50,6 @@
       border-bottom: 0.5px solid var(--border);
       flex-shrink: 0;
       gap: 12px;
-      position: relative;
     }
     .header-back {
       font-size: 13px; color: var(--muted);
@@ -51,15 +58,6 @@
     }
     .header-back:hover { background: var(--bg); }
     .header-title { font-size: 14px; font-weight: 600; flex: 1; }
-    .header-center {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-    }
-    .header-logo { height: 18px; width: auto; display: block; }
     .header-right { display: flex; align-items: center; gap: 10px; }
     .conn-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
     .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
@@ -100,6 +98,36 @@
       display: block;
       user-select: none;
       pointer-events: none;
+    }
+
+    /* Código de sesión: */
+    .sala-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 8;
+      background: rgba(255,255,255,0.92);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 9px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    .sala-badge-label {
+      display: block;
+      font-size: 7.5px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .sala-badge-codigo {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--teal);
     }
 
     /* Botones sobre la silueta */
@@ -164,7 +192,7 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    /* ── DESPLEGABLE DE CLIPS (anclado al icono pulsado) ── */
+    /* ── DESPLEGABLE DE CLIPS ── */
     .probe-dropdown {
       display: none;
       position: absolute;
@@ -290,16 +318,84 @@
       vertical-align: -2px;
       margin-right: 5px;
     }
+
+    /* ── FRANJA DE LOGOS INSTITUCIONALES ── */
+    .logos-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .logos-bar img {
+      display: block;
+      height: 16px;
+      width: auto;
+      opacity: 0.8;
+    }
+    .logos-bar img.logo-isabial { height: 23px; }
+    .logos-bar-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    /* ── AVISO DE ROTACIÓN ── */
+    /* Esta pantalla está pensada para usarse en vertical. Si el dispositivo
+       está en horizontal, se oculta la interfaz real y se muestra este aviso. */
+    .rotar-aviso {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      padding: 24px;
+      text-align: center;
+    }
+    .rotar-aviso svg { color: var(--teal); }
+    .rotar-aviso h2 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .rotar-aviso p {
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.5;
+    }
+
+    @media (orientation: landscape) {
+      .rotar-aviso { display: flex; }
+      .app-contenido { display: none; }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Visible solo si el dispositivo está en horizontal -->
+  <div class="rotar-aviso">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="2" width="12" height="20" rx="2"/>
+      <line x1="10" y1="19" x2="14" y2="19"/>
+    </svg>
+    <h2>Gira la tablet</h2>
+    <p>El panel de control está diseñado para usarse en vertical. Gira el dispositivo para continuar.</p>
+  </div>
+
+  <div class="app-contenido">
+
   <header class="header">
     <a href="/" class="header-back">← Inicio</a>
     <span class="header-title">Panel de control</span>
-    <div class="header-center">
-      <img src="/images/logo-simia.png" alt="SimIA" class="header-logo">
-    </div>
     <div class="header-right">
       <div class="conn-status">
         <span class="conn-dot" id="conn-dot"></span>
@@ -313,6 +409,11 @@
     <div class="silueta-panel">
       <div class="silueta-wrap" id="silueta-wrap">
         <img src="/images/silueta-anatomica.svg" alt="Silueta anatómica" id="silueta-img">
+
+        <div class="sala-badge">
+          <span class="sala-badge-label">Código de sesión</span>
+          <span class="sala-badge-codigo" id="sala-badge-codigo"></span>
+        </div>
 
         <!-- 1. Pulmonar apical D -->
         <button class="probe" style="left:30%;top:22%" data-zona="pulmonar-apical-d" title="Pulmonar apical derecho">
@@ -409,6 +510,16 @@
     <button class="foot-btn" id="btn-congelar"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Congelar</button>
     <button class="foot-btn detener" id="btn-detener"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>Detener</button>
   </footer>
+
+  <div class="logos-bar">
+    <img src="/images/logo-isabial.png" alt="ISABIAL" class="logo-isabial">
+    <div class="logos-bar-divider"></div>
+    <img src="/images/logo-simia.png" alt="SimIA">
+    <div class="logos-bar-divider"></div>
+    <img src="/images/logo-ecocritic.png" alt="Ecocritic">
+  </div>
+
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/socket-transporte.js"></script>

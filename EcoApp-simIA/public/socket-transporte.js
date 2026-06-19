@@ -1,6 +1,5 @@
 // socket-transporte.js
-// Sustituye a la versión basada en PeerJS: ahora habla con el servidor
-// central por Socket.io. Mantiene la misma firma, crearTransporte(sala, rol),
+// Habla con el servidor central por Socket.io. Mantiene la misma firma, crearTransporte(sala, rol),
 // para que control.js y eco.html no necesiten cambiar cómo lo usan.
 
 function crearTransporte(sala, rol) {

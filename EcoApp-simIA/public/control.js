@@ -32,6 +32,9 @@ const btnDetener     = document.getElementById('btn-detener');
 const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
 const ICONO_PLAY  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4l13 8-13 8V4z"/></svg>';
 
+// Mostrar el código de sesión en la esquina de la silueta, por si se olvida copiar
+document.getElementById('sala-badge-codigo').textContent = sala;
+
 // ── Cargar catálogo ────────────────────────────────────────────────
 async function cargarCatalogo() {
   const res  = await fetch('/api/clips');
@@ -143,9 +146,7 @@ function emitirClip(clip, datos) {
   zonaEmitiendo = datos.zona;
   actualizarColorProbes();
 
-  // Al emitir un nuevo clip, se desactivan congelado y pantalla negra:
-  // no tendría sentido emitir y que el alumno siga viendo la imagen
-  // anterior congelada o la pantalla en negro.
+  // Al emitir un nuevo clip, se desactivan congelado y pantalla negra
   congelado = false;
   btnCongelar.classList.remove('congelado');
   btnCongelar.innerHTML = ICONO_PAUSA + 'Congelar';

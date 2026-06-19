@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acerca de · EcoApp SimIA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --text: #111;
+      --muted: #666;
+      --teal: #0d6b53;
+      --teal-l: #e0f4ee;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2.5rem 1rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 22px;
+      padding: 2.5rem 2.2rem;
+      width: 92%;
+      max-width: 560px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      height: fit-content;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      margin-bottom: 1.8rem;
+    }
+    .back-link:hover { color: var(--teal); }
+
+    .titulo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1.6rem;
+    }
+
+    .seccion { margin-bottom: 1.8rem; }
+    .seccion h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--teal);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .seccion p {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .creditos-lista {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .creditos-lista li {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .creditos-lista .rol {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .footer-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 14px 16px;
+      margin-top: 2rem;
+      padding-top: 1.6rem;
+      border-top: 0.5px solid var(--border);
+    }
+    .footer-brand-img {
+      display: block;
+      height: 20px;
+      width: auto;
+      opacity: 0.85;
+    }
+    .footer-brand-img.logo-isabial { height: 29px; }
+    .footer-logos-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/" class="back-link">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver al inicio
+    </a>
+
+    <div class="titulo">Acerca de EcoApp SimIA</div>
+
+    <div class="seccion">
+      <h2>Sobre la aplicación</h2>
+      <p>
+        EcoApp SimIA es una herramienta de simulación clínica de bajo coste diseñada para democratizar el entrenamiento en ecografía. Permite a los instructores inyectar y controlar imágenes ecográficas (sanas y patológicas) en tiempo real en la pantalla del alumno, utilizando únicamente dispositivos móviles o monitores estándar a través de una red local.
+      </p>
+    </div>
+
+    <div class="seccion">
+      <h2>Creadores</h2>
+      <ul class="creditos-lista">
+        <li>
+          Aitana Gil Morcillo
+          <span class="rol">Desarrollo de la aplicación</span>
+        </li>
+        <li>
+          David Oliver García 
+          <span class="rol">PONER ALGO</span>
+        </li>
+        
+      </ul>
+    </div>
+
+    <div class="seccion">
+      <h2>Grupos involucrados</h2>
+      <ul class="creditos-lista">
+        <li>
+          Instituto de Investigación Sanitaria y Biomédica de Alicante - ISABIAL
+          <span class="rol">[Pendiente: ]</span>
+        </li>
+        <li>
+          Laboratorio de Simulación e Innovación de Alicante - SimIA
+          <span class="rol">[Pendiente: ]</span>
+        </li>
+        <li>
+          Sociedad Española de Ecografía en Críticos - Ecocritic
+          <span class="rol">[Pendiente: ]</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="footer-logos">
+      <img src="/images/logo-isabial.png" alt="ISABIAL" class="footer-brand-img logo-isabial">
+      <div class="footer-logos-divider"></div>
+      <img src="/images/logo-simia.png" alt="SimIA" class="footer-brand-img">
+      <div class="footer-logos-divider"></div>
+      <img src="/images/logo-ecocritic.png" alt="Ecocritic" class="footer-brand-img">
+    </div>
+  </div>
+</body>
+</html>

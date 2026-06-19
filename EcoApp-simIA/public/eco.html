@@ -148,8 +148,7 @@
       video.src = clip.archivo;
       video.play().catch(() => {});
       // Solo se muestra la zona anatómica (p. ej. "Pulmonar apical derecho"),
-      // nunca el nombre del hallazgo: el alumno debe interpretar él mismo
-      // si lo que ve es normal o patológico.
+      // el alumno debe interpretar él mismo si lo que ve es normal o patológico.
       if (clip.zona) {
         zonaEl.textContent   = clip.zona;
         zonaEl.style.display = 'block';

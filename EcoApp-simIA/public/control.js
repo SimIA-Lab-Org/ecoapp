@@ -12,7 +12,6 @@ let zonaActiva     = null; // zona seleccionada ahora
 let clipEmitiendo  = null; // clip que se está emitiendo
 let zonaEmitiendo  = null; // zona cuyo probe debe colorearse (verde/rojo)
 let congelado      = false;
-let pantallaOscura = false;
 let segundos       = 0;
 let timerInterval  = null;
 
@@ -28,8 +27,10 @@ const connDot        = document.getElementById('conn-dot');
 const connTexto      = document.getElementById('conn-texto');
 const timerEl        = document.getElementById('timer');
 const btnCongelar    = document.getElementById('btn-congelar');
-const btnNegro       = document.getElementById('btn-negro');
 const btnDetener     = document.getElementById('btn-detener');
+
+const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const ICONO_PLAY  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4l13 8-13 8V4z"/></svg>';
 
 // ── Cargar catálogo ────────────────────────────────────────────────
 async function cargarCatalogo() {
@@ -147,11 +148,7 @@ function emitirClip(clip, datos) {
   // anterior congelada o la pantalla en negro.
   congelado = false;
   btnCongelar.classList.remove('congelado');
-  btnCongelar.textContent = '⏸ Congelar';
-
-  pantallaOscura = false;
-  btnNegro.classList.remove('negro-on');
-  btnNegro.textContent = '■ Pantalla negra';
+  btnCongelar.innerHTML = ICONO_PAUSA + 'Congelar';
 
   // Solo se envía lo necesario para reproducir: el archivo y la zona
   // anatómica. NUNCA se envía "nombre", "sub" ni "patologico", para que
@@ -210,15 +207,7 @@ btnCongelar.addEventListener('click', () => {
   congelado = !congelado;
   socket.emit('congelar', congelado);
   btnCongelar.classList.toggle('congelado', congelado);
-  btnCongelar.textContent = congelado ? '▶ Descongelar' : '⏸ Congelar';
-});
-
-// ── Pantalla negra ─────────────────────────────────────────────────
-btnNegro.addEventListener('click', () => {
-  pantallaOscura = !pantallaOscura;
-  socket.emit('pantalla-negra', pantallaOscura);
-  btnNegro.classList.toggle('negro-on', pantallaOscura);
-  btnNegro.textContent = pantallaOscura ? '○ Mostrar pantalla' : '■ Pantalla negra';
+  btnCongelar.innerHTML = congelado ? (ICONO_PLAY + 'Descongelar') : (ICONO_PAUSA + 'Congelar');
 });
 
 // ── Cerrar el desplegable al pulsar fuera de él ──────────────────────

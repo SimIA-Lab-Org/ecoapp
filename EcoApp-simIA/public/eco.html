@@ -86,6 +86,12 @@
       backdrop-filter: blur(4px);
       white-space: nowrap;
     }
+
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -2px;
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -94,12 +100,12 @@
 
   <div id="eco-espera">
     <div class="logo">EcoApp SimIA</div>
-    <div class="icon">◎</div>
+    <div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></div>
     <p>Esperando imagen del instructor...</p>
   </div>
 
   <div id="eco-negro"></div>
-  <div id="eco-frozen">⏸ Imagen congelada</div>
+  <div id="eco-frozen"><svg class="icon-inline" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Imagen congelada</div>
   <div id="eco-zona"></div>
 
   <script src="/socket.io/socket.io.js"></script>

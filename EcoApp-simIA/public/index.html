@@ -44,7 +44,7 @@
       font-size: 34px;
       font-weight: 700;
       letter-spacing: -1px;
-      color: var(--blue);
+      color: var(--teal);
       margin-bottom: 6px;
     }
     .sub { font-size: 14px; color: var(--muted); margin-bottom: 2.5rem; }
@@ -95,7 +95,7 @@
       font-size: 40px;
       font-weight: 700;
       letter-spacing: 6px;
-      color: var(--blue);
+      color: var(--teal);
       margin: 1.2rem 0;
     }
     input.input-codigo {
@@ -115,7 +115,7 @@
       padding: 14px;
       border-radius: 10px;
       border: none;
-      background: var(--blue);
+      background: var(--teal);
       color: white;
       font-size: 15px;
       font-weight: 500;
@@ -162,6 +162,11 @@
       cursor: not-allowed;
     }
     .rol-btn .estado { font-size: 12px; }
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -3px;
+      margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -174,14 +179,14 @@
 
       <div class="btns">
         <button class="btn btn-crear" id="btn-crear">
-          <div class="btn-icon">➕</div>
+          <div class="btn-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
           <div class="btn-text">
             <strong>Crear sesión activa</strong>
             <small>Genera un código nuevo para empezar</small>
           </div>
         </button>
         <button class="btn btn-unirse" id="btn-unirse">
-          <div class="btn-icon">🔑</div>
+          <div class="btn-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.5 12.5L20 3M16 7l3 3M19 4l1 1"/></svg></div>
           <div class="btn-text">
             <strong>Unirse a sesión</strong>
             <small>Introduce el código que te han dado</small>
@@ -217,11 +222,11 @@
       <p class="sala-actual">Sala: <strong id="sala-mostrada"></strong></p>
 
       <button class="rol-btn" id="rol-control" disabled>
-        <span>⚙ Monitor de Control</span>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Monitor de Control</span>
         <span class="estado" id="estado-control">comprobando...</span>
       </button>
       <button class="rol-btn" id="rol-eco" disabled>
-        <span>◎ Monitor de Eco</span>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>Monitor de Eco</span>
         <span class="estado" id="estado-eco">comprobando...</span>
       </button>
 
@@ -265,13 +270,15 @@
       socket.emit('comprobar-sala', sala);
     }
 
+    const ICONO_CANDADO = '<svg class="icon-inline" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+
     socket.on('estado-sala', (datos) => {
       const controlBtn = document.getElementById('rol-control');
       const ecoBtn      = document.getElementById('rol-eco');
       controlBtn.disabled = datos.controlOcupado;
       ecoBtn.disabled = datos.ecoOcupado;
-      document.getElementById('estado-control').textContent = datos.controlOcupado ? '🔒 ocupado' : 'disponible';
-      document.getElementById('estado-eco').textContent = datos.ecoOcupado ? '🔒 ocupado' : 'disponible';
+      document.getElementById('estado-control').innerHTML = datos.controlOcupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
+      document.getElementById('estado-eco').innerHTML = datos.ecoOcupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
     });
 
     function elegirRol(rol) {

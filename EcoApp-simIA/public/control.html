@@ -12,8 +12,8 @@
       --border:    rgba(0,0,0,0.1);
       --text:      #111;
       --muted:     #666;
-      --blue:      #1a56a0;
-      --blue-l:    #e8f0fb;
+      --blue:      #0d6b53;
+      --blue-l:    #e0f4ee;
       --teal:      #0d6b53;
       --teal-l:    #e0f4ee;
       --red:       #a32020;
@@ -283,9 +283,13 @@
     }
     .foot-btn:hover { background: #e4e6e9; }
     .foot-btn.congelado { background: var(--amber-l); color: var(--amber); border-color: #e8c870; }
-    .foot-btn.negro-on  { background: #222; color: #fff; border-color: #222; }
     .foot-btn.detener   { color: var(--red); }
     .foot-btn.detener:hover { background: var(--red-l); }
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -2px;
+      margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -402,9 +406,8 @@
   </div>
 
   <footer class="footer">
-    <button class="foot-btn" id="btn-congelar">⏸ Congelar</button>
-    <button class="foot-btn" id="btn-negro">■ Pantalla negra</button>
-    <button class="foot-btn detener" id="btn-detener">✕ Detener</button>
+    <button class="foot-btn" id="btn-congelar"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Congelar</button>
+    <button class="foot-btn detener" id="btn-detener"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>Detener</button>
   </footer>
 
   <script src="/socket.io/socket.io.js"></script>

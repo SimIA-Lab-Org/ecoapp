@@ -97,44 +97,60 @@ app.get('/api/clips', (req, res) => {
   res.json(Object.values(mapaZonas));
 });
 
-// ── API: subir vídeo a Cloudinary ──────────────────────────────────
-// Recibe: { base64, nombre, sub, patologico, zona, titulo_zona, tipo_mime }
-app.post('/api/admin/subir', async (req, res) => {
+// ── API: generar firma para subida directa desde el navegador ──────
+// El navegador subirá el vídeo directamente a Cloudinary con esta firma,
+// sin pasar el archivo por el servidor (evita límite de tamaño).
+app.post('/api/admin/firma', (req, res) => {
   if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
     return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
   }
-  try {
-    const { base64, nombre, sub, patologico, zona, titulo_zona, tipo_mime } = req.body;
-    if (!base64 || !zona) return res.status(400).json({ ok: false, error: 'Faltan datos' });
+  const { nombre, sub, patologico, zona, titulo_zona } = req.body;
+  if (!zona || !nombre) return res.status(400).json({ ok: false, error: 'Faltan datos' });
 
-    const dataUri = `data:${tipo_mime || 'video/mp4'};base64,${base64}`;
+  const crypto    = require('crypto');
+  const timestamp = Math.floor(Date.now() / 1000);
+  const contexto  = `nombre=${nombre}|sub=${sub || ''}|patologico=${patologico ? 'true' : 'false'}|zona=${zona}|titulo_zona=${titulo_zona || zona}`;
+  const folder    = 'ecoapp-simia';
+  const tags      = `ecoapp,${zona}`;
 
-    // Contexto que se guardará en Cloudinary para reconstruir el catálogo
-    const contexto = `nombre=${nombre}|sub=${sub || ''}|patologico=${patologico ? 'true' : 'false'}|zona=${zona}|titulo_zona=${titulo_zona || zona}`;
+  // Los parámetros a firmar deben estar ordenados alfabéticamente
+  const paramsToSign = `context=${contexto}&folder=${folder}&tags=${tags}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+  const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
 
-    const resultado = await cloudinaryUpload(dataUri, {
-      resource_type: 'video',
-      folder: 'ecoapp-simia',
-      context: contexto,
-      tags: ['ecoapp', zona]
-    });
+  res.json({
+    ok: true,
+    cloudName: CLOUDINARY_CLOUD,
+    apiKey:    CLOUDINARY_KEY,
+    timestamp,
+    signature,
+    folder,
+    context:   contexto,
+    tags,
+    // metadatos para guardar en memoria tras la subida
+    meta: { nombre, sub: sub || '', patologico: !!patologico, zona, titulo_zona: titulo_zona || zona }
+  });
+});
 
-    // Añadir a la memoria de esta sesión inmediatamente
+// ── API: registrar clip en memoria tras subida directa ─────────────
+// El navegador llama a este endpoint después de subir a Cloudinary con éxito.
+app.post('/api/admin/registrar', (req, res) => {
+  const { public_id, secure_url, nombre, sub, patologico, zona, titulo_zona } = req.body;
+  if (!public_id || !secure_url || !zona) {
+    return res.status(400).json({ ok: false, error: 'Faltan datos' });
+  }
+  // Evitar duplicados
+  if (!clipsCloudinary.find(c => c.id === public_id)) {
     clipsCloudinary.push({
       zona,
       titulo:     titulo_zona || zona,
-      id:         resultado.public_id,
-      nombre,
+      id:         public_id,
+      nombre:     nombre || public_id,
       sub:        sub || '',
       patologico: !!patologico,
-      archivo:    resultado.secure_url
+      archivo:    secure_url
     });
-
-    res.json({ ok: true, url: resultado.secure_url, id: resultado.public_id });
-  } catch (e) {
-    console.error('Error subiendo a Cloudinary:', e.message);
-    res.status(500).json({ ok: false, error: e.message });
   }
+  res.json({ ok: true });
 });
 
 // ── API: borrar vídeo de Cloudinary ───────────────────────────────

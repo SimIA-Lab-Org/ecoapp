@@ -493,68 +493,98 @@
     document.getElementById('sel-zona').addEventListener('change', actualizarEstadoBtn);
     document.getElementById('inp-nombre').addEventListener('input', actualizarEstadoBtn);
 
-    // ── Subir vídeo ────────────────────────────────────────────────
+    // ── Subir vídeo directamente a Cloudinary ─────────────────────
     btnSubir.addEventListener('click', async () => {
-      const selZona   = document.getElementById('sel-zona');
-      const zona      = selZona.value;
+      const selZona    = document.getElementById('sel-zona');
+      const zona       = selZona.value;
       const tituloZona = selZona.options[selZona.selectedIndex].dataset.titulo || zona;
-      const nombre    = document.getElementById('inp-nombre').value.trim();
-      const sub       = document.getElementById('inp-sub').value.trim();
+      const nombre     = document.getElementById('inp-nombre').value.trim();
+      const sub        = document.getElementById('inp-sub').value.trim();
       const patologico = document.getElementById('chk-patologico').checked;
       const resultado  = document.getElementById('resultado');
 
       if (!zona || !nombre || !archivoSeleccionado) return;
 
-      // Mostrar progreso
       btnSubir.disabled = true;
       btnSubir.innerHTML = '<span class="spinner"></span> Preparando...';
       document.getElementById('progreso-wrap').classList.add('visible');
       document.getElementById('progreso-bar').style.width = '10%';
-      document.getElementById('progreso-texto').textContent = 'Leyendo archivo...';
+      document.getElementById('progreso-texto').textContent = 'Obteniendo autorización...';
       resultado.className = 'resultado';
       resultado.style.display = 'none';
 
       try {
-        // Leer como base64
-        const base64 = await leerComoBase64(archivoSeleccionado, progreso => {
-          document.getElementById('progreso-bar').style.width = (10 + progreso * 30) + '%';
+        // 1. Pedir firma al servidor
+        const firmaResp = await fetch('/api/admin/firma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, sub, patologico, zona, titulo_zona: tituloZona })
+        });
+        const firma = await firmaResp.json();
+        if (!firma.ok) { mostrarResultado('err', 'Error: ' + firma.error); return; }
+
+        document.getElementById('progreso-bar').style.width = '20%';
+        document.getElementById('progreso-texto').textContent = 'Subiendo vídeo...';
+
+        // 2. Subir directamente a Cloudinary con FormData (sin límite de tamaño)
+        const formData = new FormData();
+        formData.append('file', archivoSeleccionado);
+        formData.append('api_key',   firma.apiKey);
+        formData.append('timestamp', firma.timestamp);
+        formData.append('signature', firma.signature);
+        formData.append('folder',    firma.folder);
+        formData.append('context',   firma.context);
+        formData.append('tags',      firma.tags);
+
+        // Subir con XHR para tener progreso real
+        const cloudResp = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `https://api.cloudinary.com/v1_1/${firma.cloudName}/video/upload`);
+          xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+              const pct = 20 + (e.loaded / e.total) * 70;
+              document.getElementById('progreso-bar').style.width = pct + '%';
+            }
+          };
+          xhr.onload = () => resolve(JSON.parse(xhr.responseText));
+          xhr.onerror = () => reject(new Error('Error de red'));
+          xhr.send(formData);
         });
 
-        document.getElementById('progreso-texto').textContent = 'Subiendo a la nube...';
-        document.getElementById('progreso-bar').style.width = '45%';
+        if (cloudResp.error) { mostrarResultado('err', 'Cloudinary: ' + cloudResp.error.message); return; }
 
-        const resp = await fetch('/api/admin/subir', {
+        document.getElementById('progreso-bar').style.width = '95%';
+        document.getElementById('progreso-texto').textContent = 'Registrando...';
+
+        // 3. Registrar en memoria del servidor
+        await fetch('/api/admin/registrar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            base64, nombre, sub, patologico, zona,
-            titulo_zona: tituloZona,
-            tipo_mime: archivoSeleccionado.type || 'video/mp4'
+            public_id:   cloudResp.public_id,
+            secure_url:  cloudResp.secure_url,
+            nombre, sub, patologico, zona,
+            titulo_zona: tituloZona
           })
         });
 
-        document.getElementById('progreso-bar').style.width = '95%';
-        const json = await resp.json();
+        document.getElementById('progreso-bar').style.width = '100%';
+        document.getElementById('progreso-texto').textContent = '¡Subido!';
+        mostrarResultado('ok', '¡Vídeo subido correctamente! Ya está disponible en el panel de control.');
 
-        if (json.ok) {
-          document.getElementById('progreso-bar').style.width = '100%';
-          document.getElementById('progreso-texto').textContent = '¡Subido!';
-          mostrarResultado('ok', '¡Vídeo subido correctamente! Ya está disponible en el panel de control.');
-          // Resetear formulario
-          document.getElementById('inp-nombre').value = '';
-          document.getElementById('inp-sub').value = '';
-          document.getElementById('chk-patologico').checked = false;
-          document.getElementById('sel-zona').value = '';
-          archivoNombre.textContent = '';
-          archivoSeleccionado = null;
-          inpArchivo.value = '';
-          actualizarEstadoBtn();
-          cargarListaClips();
-        } else {
-          mostrarResultado('err', 'Error: ' + json.error);
-        }
+        // Resetear formulario
+        document.getElementById('inp-nombre').value = '';
+        document.getElementById('inp-sub').value = '';
+        document.getElementById('chk-patologico').checked = false;
+        document.getElementById('sel-zona').value = '';
+        archivoNombre.textContent = '';
+        archivoSeleccionado = null;
+        inpArchivo.value = '';
+        actualizarEstadoBtn();
+        cargarListaClips();
+
       } catch (e) {
-        mostrarResultado('err', 'Error de conexión: ' + e.message);
+        mostrarResultado('err', 'Error: ' + e.message);
       } finally {
         setTimeout(() => {
           document.getElementById('progreso-wrap').classList.remove('visible');
@@ -565,16 +595,6 @@
         actualizarEstadoBtn();
       }
     });
-
-    function leerComoBase64(file, onProgreso) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onprogress = e => { if (e.lengthComputable) onProgreso(e.loaded / e.total); };
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
 
     function mostrarResultado(tipo, texto) {
       const el = document.getElementById('resultado');

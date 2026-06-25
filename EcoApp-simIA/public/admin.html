@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Gestión de vídeos · EcoApp SimIA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f0f2f5;
+      --surface: #ffffff;
+      --border:  rgba(0,0,0,0.1);
+      --text:    #111;
+      --muted:   #666;
+      --teal:    #0d6b53;
+      --teal-l:  #e0f4ee;
+      --red:     #a32020;
+      --red-l:   #fbeaea;
+      --green:   #1e6b2e;
+      --green-l: #e4f5e8;
+      --font:    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .header-back {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.1s;
+    }
+    .header-back:hover { background: var(--bg); }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+      color: var(--text);
+    }
+
+    /* ── CONTENIDO ── */
+    .contenido {
+      flex: 1;
+      padding: 20px 16px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── TARJETA SUBIR ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .card-titulo {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-titulo svg { color: var(--teal); flex-shrink: 0; }
+
+    .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .campo label { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .campo select,
+    .campo input[type="text"] {
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      appearance: none;
+    }
+    .campo select:focus,
+    .campo input:focus {
+      outline: none;
+      border-color: var(--teal);
+      background: var(--surface);
+    }
+
+    /* Toggle normal / patológico */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 13px; color: var(--text); flex: 1; }
+    .toggle-label small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--red); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* Zona de arrastrar / seleccionar archivo */
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over { border-color: var(--teal); background: var(--teal-l); }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-zona-icon { color: var(--teal); margin-bottom: 10px; }
+    .drop-zone p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .drop-zone strong { color: var(--text); }
+    .drop-zone .archivo-seleccionado {
+      font-size: 13px;
+      color: var(--teal);
+      font-weight: 500;
+      margin-top: 6px;
+    }
+
+    /* Barra de progreso */
+    .progreso-wrap { display: none; margin-bottom: 14px; }
+    .progreso-wrap.visible { display: block; }
+    .progreso-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .progreso-bar {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progreso-texto { font-size: 12px; color: var(--muted); text-align: center; }
+
+    /* Botón subir */
+    .btn-subir {
+      width: 100%;
+      padding: 13px;
+      background: var(--teal);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-subir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Mensaje de resultado */
+    .resultado {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 12px;
+      align-items: center;
+      gap: 8px;
+    }
+    .resultado.visible { display: flex; }
+    .resultado.ok  { background: var(--green-l); color: var(--green); }
+    .resultado.err { background: var(--red-l);   color: var(--red); }
+
+    /* ── LISTADO DE VÍDEOS SUBIDOS ── */
+    .lista-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .lista-header .card-titulo { margin-bottom: 0; }
+    .btn-refrescar {
+      font-size: 12px;
+      color: var(--muted);
+      background: none;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: var(--font);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-refrescar:hover { background: var(--bg); }
+
+    .clip-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      margin-bottom: 8px;
+    }
+    .clip-thumb {
+      width: 52px;
+      height: 40px;
+      border-radius: 8px;
+      background: #ddd;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+    }
+    .clip-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .clip-meta { flex: 1; min-width: 0; }
+    .clip-meta-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .clip-meta-sub    { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .badge-p { background: var(--red-l);   color: var(--red); }
+    .badge-n { background: var(--green-l); color: var(--green); }
+    .btn-borrar {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-borrar:hover { background: var(--red-l); color: var(--red); border-color: var(--red); }
+
+    .lista-vacia {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <a href="/control.html" id="volver-link" class="header-back">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>
+      Panel de control
+    </a>
+    <span class="header-title">Gestión de vídeos</span>
+  </header>
+
+  <div class="contenido">
+
+    <!-- Formulario de subida -->
+    <div class="card">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir nuevo vídeo
+      </div>
+
+      <div class="campo">
+        <label>Zona anatómica</label>
+        <select id="sel-zona">
+          <option value="">Cargando zonas...</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Nombre del clip</label>
+        <input type="text" id="inp-nombre" placeholder="Ej: Derrame pleural moderado">
+      </div>
+
+      <div class="campo">
+        <label>Descripción breve (opcional)</label>
+        <input type="text" id="inp-sub" placeholder="Ej: Vista paraesternal larga">
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Clip patológico
+          <small>Activa si el vídeo muestra una patología</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-patologico">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="inp-archivo" accept="video/*">
+        <div class="drop-zona-icon">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <p><strong>Toca para seleccionar el vídeo</strong><br>o arrastra el archivo aquí</p>
+        <p class="archivo-seleccionado" id="archivo-nombre"></p>
+      </div>
+
+      <div class="progreso-wrap" id="progreso-wrap">
+        <div class="progreso-bar-bg">
+          <div class="progreso-bar" id="progreso-bar"></div>
+        </div>
+        <p class="progreso-texto" id="progreso-texto">Subiendo...</p>
+      </div>
+
+      <button class="btn-subir" id="btn-subir" disabled>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir vídeo
+      </button>
+
+      <div class="resultado" id="resultado"></div>
+    </div>
+
+    <!-- Listado de vídeos subidos -->
+    <div class="card">
+      <div class="lista-header">
+        <div class="card-titulo">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Vídeos en la nube
+        </div>
+        <button class="btn-refrescar" id="btn-refrescar">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Actualizar
+        </button>
+      </div>
+      <div id="lista-clips"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Recuperar sala de la URL para volver con contexto ───────────
+    const params = new URLSearchParams(location.search);
+    const sala   = params.get('sala');
+    if (sala) {
+      document.getElementById('volver-link').href = `/control.html?sala=${encodeURIComponent(sala)}`;
+    }
+
+    // ── Cargar zonas ───────────────────────────────────────────────
+    async function cargarZonas() {
+      const sel = document.getElementById('sel-zona');
+      try {
+        const zonas = await fetch('/api/zonas').then(r => r.json());
+
+        const mapGrupo = {
+          'pulmonar':     'Pulmón',
+          'cardiaco':     'Corazón',
+          'grandes':      'Grandes vasos',
+          'morrison':     'Abdomen',
+          'esplenorenal': 'Abdomen',
+          'douglas':      'Abdomen',
+          'venas':        'Venas MMII'
+        };
+        const grupos = {};
+        const orden  = ['Pulmón', 'Corazón', 'Grandes vasos', 'Abdomen', 'Venas MMII'];
+
+        zonas.forEach(z => {
+          const prefijo = Object.keys(mapGrupo).find(p => z.zona.startsWith(p));
+          const grupo   = prefijo ? mapGrupo[prefijo] : 'Otros';
+          if (!grupos[grupo]) grupos[grupo] = [];
+          grupos[grupo].push(z);
+        });
+
+        sel.innerHTML = '<option value="">— Elige una zona —</option>' +
+          [...orden, ...Object.keys(grupos).filter(g => !orden.includes(g))]
+            .filter(g => grupos[g] && grupos[g].length > 0)
+            .map(g =>
+              `<optgroup label="${g}">` +
+              grupos[g].map(z => `<option value="${z.zona}" data-titulo="${z.titulo}">${z.titulo}</option>`).join('') +
+              `</optgroup>`
+            ).join('');
+      } catch {
+        sel.innerHTML = '<option value="">Error cargando zonas</option>';
+      }
+    }
+
+    // ── Archivo seleccionado ───────────────────────────────────────
+    let archivoSeleccionado = null;
+    const dropZone   = document.getElementById('drop-zone');
+    const inpArchivo = document.getElementById('inp-archivo');
+    const archivoNombre = document.getElementById('archivo-nombre');
+    const btnSubir   = document.getElementById('btn-subir');
+
+    function actualizarEstadoBtn() {
+      const zona   = document.getElementById('sel-zona').value;
+      const nombre = document.getElementById('inp-nombre').value.trim();
+      btnSubir.disabled = !zona || !nombre || !archivoSeleccionado;
+    }
+
+    inpArchivo.addEventListener('change', () => {
+      const f = inpArchivo.files[0];
+      if (!f) return;
+      archivoSeleccionado = f;
+      archivoNombre.textContent = f.name;
+      actualizarEstadoBtn();
+    });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (f && f.type.startsWith('video/')) {
+        archivoSeleccionado = f;
+        archivoNombre.textContent = f.name;
+        actualizarEstadoBtn();
+      }
+    });
+
+    document.getElementById('sel-zona').addEventListener('change', actualizarEstadoBtn);
+    document.getElementById('inp-nombre').addEventListener('input', actualizarEstadoBtn);
+
+    // ── Subir vídeo ────────────────────────────────────────────────
+    btnSubir.addEventListener('click', async () => {
+      const selZona   = document.getElementById('sel-zona');
+      const zona      = selZona.value;
+      const tituloZona = selZona.options[selZona.selectedIndex].dataset.titulo || zona;
+      const nombre    = document.getElementById('inp-nombre').value.trim();
+      const sub       = document.getElementById('inp-sub').value.trim();
+      const patologico = document.getElementById('chk-patologico').checked;
+      const resultado  = document.getElementById('resultado');
+
+      if (!zona || !nombre || !archivoSeleccionado) return;
+
+      // Mostrar progreso
+      btnSubir.disabled = true;
+      btnSubir.innerHTML = '<span class="spinner"></span> Preparando...';
+      document.getElementById('progreso-wrap').classList.add('visible');
+      document.getElementById('progreso-bar').style.width = '10%';
+      document.getElementById('progreso-texto').textContent = 'Leyendo archivo...';
+      resultado.className = 'resultado';
+      resultado.style.display = 'none';
+
+      try {
+        // Leer como base64
+        const base64 = await leerComoBase64(archivoSeleccionado, progreso => {
+          document.getElementById('progreso-bar').style.width = (10 + progreso * 30) + '%';
+        });
+
+        document.getElementById('progreso-texto').textContent = 'Subiendo a la nube...';
+        document.getElementById('progreso-bar').style.width = '45%';
+
+        const resp = await fetch('/api/admin/subir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64, nombre, sub, patologico, zona,
+            titulo_zona: tituloZona,
+            tipo_mime: archivoSeleccionado.type || 'video/mp4'
+          })
+        });
+
+        document.getElementById('progreso-bar').style.width = '95%';
+        const json = await resp.json();
+
+        if (json.ok) {
+          document.getElementById('progreso-bar').style.width = '100%';
+          document.getElementById('progreso-texto').textContent = '¡Subido!';
+          mostrarResultado('ok', '¡Vídeo subido correctamente! Ya está disponible en el panel de control.');
+          // Resetear formulario
+          document.getElementById('inp-nombre').value = '';
+          document.getElementById('inp-sub').value = '';
+          document.getElementById('chk-patologico').checked = false;
+          document.getElementById('sel-zona').value = '';
+          archivoNombre.textContent = '';
+          archivoSeleccionado = null;
+          inpArchivo.value = '';
+          actualizarEstadoBtn();
+          cargarListaClips();
+        } else {
+          mostrarResultado('err', 'Error: ' + json.error);
+        }
+      } catch (e) {
+        mostrarResultado('err', 'Error de conexión: ' + e.message);
+      } finally {
+        setTimeout(() => {
+          document.getElementById('progreso-wrap').classList.remove('visible');
+          document.getElementById('progreso-bar').style.width = '0%';
+        }, 1500);
+        btnSubir.disabled = false;
+        btnSubir.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Subir vídeo';
+        actualizarEstadoBtn();
+      }
+    });
+
+    function leerComoBase64(file, onProgreso) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onprogress = e => { if (e.lengthComputable) onProgreso(e.loaded / e.total); };
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function mostrarResultado(tipo, texto) {
+      const el = document.getElementById('resultado');
+      const icono = tipo === 'ok'
+        ? '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      el.innerHTML = icono + texto;
+      el.className = `resultado visible ${tipo}`;
+    }
+
+    // ── Cargar lista de clips en la nube ───────────────────────────
+    async function cargarListaClips() {
+      const lista = document.getElementById('lista-clips');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const zonas = await fetch('/api/clips').then(r => r.json());
+        // Filtrar solo clips con URL de Cloudinary (contienen "cloudinary.com")
+        const cloudClips = [];
+        zonas.forEach(z => {
+          z.clips.filter(c => c.archivo && c.archivo.includes('cloudinary')).forEach(c => {
+            cloudClips.push({ ...c, zona_titulo: z.titulo });
+          });
+        });
+
+        if (cloudClips.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">Aún no hay vídeos subidos a la nube.<br>Usa el formulario de arriba para añadir el primero.</div>';
+          return;
+        }
+
+        lista.innerHTML = cloudClips.map(c => `
+          <div class="clip-item" data-id="${c.id}">
+            <div class="clip-thumb">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/></svg>
+            </div>
+            <div class="clip-meta">
+              <div class="clip-meta-nombre">${c.nombre}</div>
+              <div class="clip-meta-sub">${c.zona_titulo}${c.sub ? ' · ' + c.sub : ''}</div>
+            </div>
+            <span class="badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
+            <button class="btn-borrar" onclick="borrarClip('${c.id}')" title="Eliminar vídeo">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            </button>
+          </div>
+        `).join('');
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando la lista.</div>';
+      }
+    }
+
+    async function borrarClip(publicId) {
+      if (!confirm('¿Eliminar este vídeo? Esta acción no se puede deshacer.')) return;
+      try {
+        const resp = await fetch(`/api/admin/borrar/${encodeURIComponent(publicId)}`, { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) cargarListaClips();
+        else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
+    document.getElementById('btn-refrescar').addEventListener('click', cargarListaClips);
+
+    // ── Arrancar ───────────────────────────────────────────────────
+    cargarZonas();
+    cargarListaClips();
+  </script>
+</body>
+</html>

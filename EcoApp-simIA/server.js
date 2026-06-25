@@ -1,20 +1,243 @@
-const express = require('express');
-const http    = require('http');
+const express    = require('express');
+const http       = require('http');
 const { Server } = require('socket.io');
-const path    = require('path');
-const fs      = require('fs');
+const path       = require('path');
+const fs         = require('fs');
+const https      = require('https');
+const { Readable } = require('stream');
 
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server);
-const PORT = process.env.PORT || 3000;
+const PORT   = process.env.PORT || 3000;
 
+// ── Cloudinary ─────────────────────────────────────────────────────
+const CLOUDINARY_CLOUD = process.env.CLOUDINARY_CLOUD_NAME;
+const CLOUDINARY_KEY   = process.env.CLOUDINARY_API_KEY;
+const CLOUDINARY_SECRET = process.env.CLOUDINARY_API_SECRET;
+
+// Clips subidos por profesores en esta sesión (en memoria)
+// Se recargan de Cloudinary al arrancar el servidor
+let clipsCloudinary = [];
+
+async function cargarClipsDeCloudinary() {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) return;
+  try {
+    const auth = Buffer.from(`${CLOUDINARY_KEY}:${CLOUDINARY_SECRET}`).toString('base64');
+    const data = await httpGet(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/video?max_results=500&tags=true&context=true`,
+      { Authorization: `Basic ${auth}` }
+    );
+    const recursos = JSON.parse(data).resources || [];
+    clipsCloudinary = recursos.map(r => {
+      const ctx = parseContext(r.context?.custom || {});
+      return {
+        zona:       ctx.zona       || 'sin-zona',
+        titulo:     ctx.titulo_zona || ctx.zona || 'Sin zona',
+        id:         r.public_id,
+        nombre:     ctx.nombre     || r.public_id,
+        sub:        ctx.sub        || '',
+        patologico: ctx.patologico === 'true',
+        archivo:    r.secure_url
+      };
+    });
+    console.log(`Cloudinary: ${clipsCloudinary.length} vídeos cargados`);
+  } catch (e) {
+    console.error('Error cargando Cloudinary:', e.message);
+  }
+}
+
+function parseContext(ctx) {
+  // El contexto de Cloudinary puede llegar como objeto o como string "key=val|key2=val2"
+  if (typeof ctx === 'string') {
+    return Object.fromEntries(ctx.split('|').map(p => p.split('=')));
+  }
+  return ctx;
+}
+
+function httpGet(url, headers = {}) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers }, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
+    }).on('error', reject);
+  });
+}
+
+// ── Middleware ─────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
+// Para parsear JSON en el body de las peticiones de admin
+app.use(express.json({ limit: '5mb' }));
 
+// ── API: catálogo de clips ─────────────────────────────────────────
 app.get('/api/clips', (req, res) => {
-  const clips = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'clips.json'), 'utf8'));
-  res.json(clips);
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'clips.json'), 'utf8'));
+
+  // Mezclar clips locales con los de Cloudinary, agrupados por zona
+  const mapaZonas = {};
+  base.forEach(z => { mapaZonas[z.zona] = { ...z, clips: [...z.clips] }; });
+
+  clipsCloudinary.forEach(c => {
+    if (!mapaZonas[c.zona]) {
+      mapaZonas[c.zona] = { zona: c.zona, titulo: c.titulo, clips: [] };
+    }
+    // Evitar duplicados por id
+    if (!mapaZonas[c.zona].clips.find(x => x.id === c.id)) {
+      mapaZonas[c.zona].clips.push({
+        id:         c.id,
+        nombre:     c.nombre,
+        sub:        c.sub,
+        patologico: c.patologico,
+        archivo:    c.archivo
+      });
+    }
+  });
+
+  res.json(Object.values(mapaZonas));
 });
+
+// ── API: subir vídeo a Cloudinary ──────────────────────────────────
+// Recibe: { base64, nombre, sub, patologico, zona, titulo_zona, tipo_mime }
+app.post('/api/admin/subir', async (req, res) => {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  try {
+    const { base64, nombre, sub, patologico, zona, titulo_zona, tipo_mime } = req.body;
+    if (!base64 || !zona) return res.status(400).json({ ok: false, error: 'Faltan datos' });
+
+    const dataUri = `data:${tipo_mime || 'video/mp4'};base64,${base64}`;
+
+    // Contexto que se guardará en Cloudinary para reconstruir el catálogo
+    const contexto = `nombre=${nombre}|sub=${sub || ''}|patologico=${patologico ? 'true' : 'false'}|zona=${zona}|titulo_zona=${titulo_zona || zona}`;
+
+    const resultado = await cloudinaryUpload(dataUri, {
+      resource_type: 'video',
+      folder: 'ecoapp-simia',
+      context: contexto,
+      tags: ['ecoapp', zona]
+    });
+
+    // Añadir a la memoria de esta sesión inmediatamente
+    clipsCloudinary.push({
+      zona,
+      titulo:     titulo_zona || zona,
+      id:         resultado.public_id,
+      nombre,
+      sub:        sub || '',
+      patologico: !!patologico,
+      archivo:    resultado.secure_url
+    });
+
+    res.json({ ok: true, url: resultado.secure_url, id: resultado.public_id });
+  } catch (e) {
+    console.error('Error subiendo a Cloudinary:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── API: borrar vídeo de Cloudinary ───────────────────────────────
+app.delete('/api/admin/borrar/:publicId(*)', async (req, res) => {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  try {
+    const publicId = req.params.publicId;
+    await cloudinaryDestroy(publicId);
+    clipsCloudinary = clipsCloudinary.filter(c => c.id !== publicId);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── API: lista de zonas disponibles (para el formulario de admin) ──
+app.get('/api/zonas', (req, res) => {
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'clips.json'), 'utf8'));
+  res.json(base.map(z => ({ zona: z.zona, titulo: z.titulo })));
+});
+
+// ── Helpers Cloudinary ─────────────────────────────────────────────
+function cloudinaryUpload(dataUri, options) {
+  return new Promise((resolve, reject) => {
+    const params = {
+      file: dataUri,
+      api_key: CLOUDINARY_KEY,
+      timestamp: Math.floor(Date.now() / 1000),
+      ...options
+    };
+
+    // Generar firma
+    const crypto = require('crypto');
+    const toSign = Object.keys(params)
+      .filter(k => k !== 'file' && k !== 'api_key' && k !== 'resource_type')
+      .sort()
+      .map(k => `${k}=${Array.isArray(params[k]) ? params[k].join(',') : params[k]}`)
+      .join('&') + CLOUDINARY_SECRET;
+
+    params.signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+    const postData = new URLSearchParams(params).toString();
+    const urlPath  = `/v1_1/${CLOUDINARY_CLOUD}/${options.resource_type || 'video'}/upload`;
+
+    const reqOpts = {
+      hostname: 'api.cloudinary.com',
+      path: urlPath,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const req = https.request(reqOpts, r => {
+      let body = '';
+      r.on('data', c => body += c);
+      r.on('end', () => {
+        const json = JSON.parse(body);
+        if (json.error) reject(new Error(json.error.message));
+        else resolve(json);
+      });
+    });
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
+function cloudinaryDestroy(publicId) {
+  return new Promise((resolve, reject) => {
+    const crypto    = require('crypto');
+    const timestamp = Math.floor(Date.now() / 1000);
+    const toSign    = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+    const postData = new URLSearchParams({
+      public_id: publicId, timestamp, api_key: CLOUDINARY_KEY,
+      signature, resource_type: 'video'
+    }).toString();
+
+    const reqOpts = {
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/video/destroy`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const req = https.request(reqOpts, r => {
+      let body = '';
+      r.on('data', c => body += c);
+      r.on('end', () => resolve(JSON.parse(body)));
+    });
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
 
 // ── Salas ──────────────────────────────────────────────────────────
 // Cada sala tiene su propio estado y sus propios roles ocupados.
@@ -111,6 +334,7 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`\nEcoApp SimIA → http://localhost:${PORT}\n`);
+  await cargarClipsDeCloudinary();
 });

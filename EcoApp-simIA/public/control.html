@@ -343,53 +343,9 @@
       height: 18px;
       background: var(--border);
     }
-
-    /* ── AVISO DE ROTACIÓN ── */
-    /* Esta pantalla está pensada para usarse en vertical. Si el dispositivo
-       está en horizontal, se oculta la interfaz real y se muestra este aviso. */
-    .rotar-aviso {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: var(--bg);
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      padding: 24px;
-      text-align: center;
-    }
-    .rotar-aviso svg { color: var(--teal); }
-    .rotar-aviso h2 {
-      font-size: 17px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .rotar-aviso p {
-      font-size: 13px;
-      color: var(--muted);
-      max-width: 280px;
-      line-height: 1.5;
-    }
-
-    @media (orientation: landscape) {
-      .rotar-aviso { display: flex; }
-      .app-contenido { display: none; }
-    }
   </style>
 </head>
 <body>
-
-  <!-- Visible solo si el dispositivo está en horizontal -->
-  <div class="rotar-aviso">
-    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="6" y="2" width="12" height="20" rx="2"/>
-      <line x1="10" y1="19" x2="14" y2="19"/>
-    </svg>
-    <h2>Gira la tablet</h2>
-    <p>El panel de control está diseñado para usarse en vertical. Gira el dispositivo para continuar.</p>
-  </div>
 
   <div class="app-contenido">
 
@@ -402,6 +358,9 @@
         <span id="conn-texto">Conectando...</span>
       </div>
       <span class="timer" id="timer">00:00</span>
+      <a id="btn-menu" href="/admin.html" title="Gestión de vídeos" style="width:32px;height:32px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:background 0.15s,color 0.15s;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </a>
     </div>
   </header>
 

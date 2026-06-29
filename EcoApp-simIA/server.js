@@ -167,11 +167,11 @@ app.put('/api/admin/editar/:publicId(*)', async (req, res) => {
 
     const crypto    = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000);
-    const toSign    = `context=${contexto}&public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const toSign    = `context=${contexto}&public_id=${publicId}&timestamp=${timestamp}&type=upload${CLOUDINARY_SECRET}`;
     const signature = crypto.createHash('sha1').update(toSign).digest('hex');
 
     const postData = new URLSearchParams({
-      public_id: publicId, context: contexto,
+      public_id: publicId, context: contexto, type: 'upload',
       timestamp, api_key: CLOUDINARY_KEY, signature
     }).toString();
 

@@ -19,6 +19,30 @@ const CLOUDINARY_SECRET = process.env.CLOUDINARY_API_SECRET;
 // Clips subidos por profesores en esta sesión (en memoria)
 // Se recargan de Cloudinary al arrancar el servidor
 let clipsCloudinary = [];
+let casosClinicos    = []; // casos guardados en Cloudinary como JSON
+
+async function cargarCasosClinicos() {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) return;
+  try {
+    const auth = Buffer.from(`${CLOUDINARY_KEY}:${CLOUDINARY_SECRET}`).toString('base64');
+    const data = await httpGet(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/raw?max_results=500&tags=true&prefix=ecoapp-casos`,
+      { Authorization: `Basic ${auth}` }
+    );
+    const recursos = JSON.parse(data).resources || [];
+    const casos = [];
+    for (const r of recursos) {
+      try {
+        const json = await httpGet(r.secure_url);
+        casos.push(JSON.parse(json));
+      } catch(e) {}
+    }
+    casosClinicos = casos;
+    console.log(`Cloudinary: ${casosClinicos.length} casos clínicos cargados`);
+  } catch(e) {
+    console.error('Error cargando casos:', e.message);
+  }
+}
 
 async function cargarClipsDeCloudinary() {
   if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) return;
@@ -319,6 +343,133 @@ function cloudinaryDestroy(publicId) {
   });
 }
 
+// ── API: listar casos clínicos ─────────────────────────────────────
+app.get('/api/admin/casos', (req, res) => {
+  res.json(casosClinicos);
+});
+
+// ── API: crear o actualizar caso clínico ───────────────────────────
+app.post('/api/admin/casos', async (req, res) => {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  try {
+    const { id, nombre, descripcion, clips } = req.body;
+    if (!nombre || !clips || clips.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Faltan datos' });
+    }
+
+    const casoId  = id || `caso-${Date.now()}`;
+    const caso    = { id: casoId, nombre, descripcion: descripcion || '', clips };
+    const json    = JSON.stringify(caso);
+    const crypto  = require('crypto');
+    const timestamp = Math.floor(Date.now() / 1000);
+    const publicId  = `ecoapp-casos/${casoId}`;
+
+    // Subir JSON como raw a Cloudinary
+    const toSign  = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+    const boundary = '----FormBoundary' + Date.now();
+    const bodyParts = [
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${casoId}.json"\r\nContent-Type: application/json\r\n\r\n${json}`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="public_id"\r\n\r\n${publicId}`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n${CLOUDINARY_KEY}`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="timestamp"\r\n\r\n${timestamp}`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="signature"\r\n\r\n${signature}`,
+      `--${boundary}\r\nContent-Disposition: form-data; name="overwrite"\r\n\r\ntrue`,
+      `--${boundary}--`
+    ].join('\r\n');
+
+    const bodyBuf = Buffer.from(bodyParts);
+    const reqOpts = {
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/raw/upload`,
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': bodyBuf.length
+      }
+    };
+
+    await new Promise((resolve, reject) => {
+      const r = https.request(reqOpts, resp => {
+        let body = '';
+        resp.on('data', c => body += c);
+        resp.on('end', () => {
+          const parsed = JSON.parse(body);
+          if (parsed.error) reject(new Error(parsed.error.message));
+          else resolve(parsed);
+        });
+      });
+      r.on('error', reject);
+      r.write(bodyBuf);
+      r.end();
+    });
+
+    // Actualizar memoria
+    const idx = casosClinicos.findIndex(c => c.id === casoId);
+    if (idx !== -1) casosClinicos[idx] = caso;
+    else casosClinicos.push(caso);
+
+    res.json({ ok: true, id: casoId });
+  } catch(e) {
+    console.error('Error guardando caso:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── API: borrar caso clínico ───────────────────────────────────────
+app.delete('/api/admin/casos/:casoId', async (req, res) => {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  try {
+    const casoId  = req.params.casoId;
+    const publicId = `ecoapp-casos/${casoId}`;
+    const crypto   = require('crypto');
+    const timestamp = Math.floor(Date.now() / 1000);
+    const toSign   = `public_id=${publicId}&resource_type=raw&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+    const postData = new URLSearchParams({
+      public_id: publicId, resource_type: 'raw',
+      timestamp, api_key: CLOUDINARY_KEY, signature
+    }).toString();
+
+    const reqOpts = {
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/raw/destroy`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    await new Promise((resolve, reject) => {
+      const r = https.request(reqOpts, resp => {
+        let body = '';
+        resp.on('data', c => body += c);
+        resp.on('end', () => resolve(JSON.parse(body)));
+      });
+      r.on('error', reject);
+      r.write(postData);
+      r.end();
+    });
+
+    casosClinicos = casosClinicos.filter(c => c.id !== casoId);
+    res.json({ ok: true });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── API: casos clínicos para el panel de control ───────────────────
+app.get('/api/casos', (req, res) => {
+  res.json(casosClinicos);
+});
+
 // ── API: verificar contraseña de admin ────────────────────────────
 app.post('/api/admin/auth', (req, res) => {
   const { pwd } = req.body;
@@ -428,4 +579,5 @@ io.on('connection', (socket) => {
 server.listen(PORT, async () => {
   console.log(`\nEcoApp SimIA → http://localhost:${PORT}\n`);
   await cargarClipsDeCloudinary();
+  await cargarCasosClinicos();
 });

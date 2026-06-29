@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Gestión de vídeos · EcoApp SimIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -460,6 +463,104 @@
       font-size: 18px;
     }
     .preview-close:hover { background: rgba(255,255,255,0.3); }
+
+    /* ── CASOS CLÍNICOS ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 0.5px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--font);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.activa { color: var(--teal); border-bottom-color: var(--teal); }
+    .tab-seccion { display: none; }
+    .tab-seccion.visible { display: flex; flex-direction: column; gap: 20px; }
+
+    .caso-item {
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .caso-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px;
+    }
+    .caso-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #6b4fa8; flex-shrink: 0;
+    }
+    .caso-meta { flex: 1; min-width: 0; }
+    .caso-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .caso-desc   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .caso-clips-count {
+      font-size: 11px; color: var(--muted);
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 8px;
+      flex-shrink: 0;
+    }
+    .caso-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .caso-clips-lista {
+      border-top: 0.5px solid var(--border);
+      padding: 8px 12px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .caso-clip-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+    }
+    .caso-clip-zona { color: var(--text); font-weight: 500; flex: 1; }
+    .caso-clip-nombre { font-size: 11px; }
+
+    /* Formulario nuevo caso */
+    .nuevo-caso-form {
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      padding: 16px;
+    }
+    .clips-selector {
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .zona-grupo { border-bottom: 0.5px solid var(--border); }
+    .zona-grupo:last-child { border-bottom: none; }
+    .zona-grupo-titulo {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 8px 12px 4px;
+      background: var(--bg);
+    }
+    .clip-check-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .clip-check-row:hover { background: var(--teal-l); }
+    .clip-check-row input[type="checkbox"] { accent-color: #6b4fa8; width: 14px; height: 14px; flex-shrink: 0; }
+    .clip-check-nombre { font-size: 13px; color: var(--text); flex: 1; }
+    .clip-check-badge {
+      font-size: 10px; padding: 1px 6px; border-radius: 6px; font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -565,6 +666,47 @@
         </button>
       </div>
       <div id="lista-clips"></div>
+
+    <!-- Casos clínicos -->
+    <div class="card">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Casos clínicos
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn activa" id="tab-lista-btn">Casos guardados</button>
+        <button class="tab-btn" id="tab-nuevo-btn">+ Nuevo caso</button>
+      </div>
+
+      <!-- Lista de casos -->
+      <div class="tab-seccion visible" id="tab-lista">
+        <div id="lista-casos"><div class="lista-vacia">Cargando...</div></div>
+      </div>
+
+      <!-- Formulario nuevo caso -->
+      <div class="tab-seccion" id="tab-nuevo">
+        <div class="nuevo-caso-form">
+          <div class="campo">
+            <label>Nombre del caso</label>
+            <input type="text" id="caso-nombre" placeholder="Ej: Paciente con disnea aguda">
+          </div>
+          <div class="campo">
+            <label>Descripción (opcional)</label>
+            <input type="text" id="caso-desc" placeholder="Ej: Varón 65 años, disnea y fiebre">
+          </div>
+          <div class="campo">
+            <label>Selecciona los clips de este caso</label>
+            <div class="clips-selector" id="clips-selector">
+              <div class="lista-vacia">Cargando clips...</div>
+            </div>
+          </div>
+          <div class="edit-acciones" style="margin-top:12px;">
+            <span class="edit-msg" id="caso-msg"></span>
+            <button class="btn-guardar" id="btn-guardar-caso">Guardar caso</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -978,6 +1120,7 @@
     // ── Arrancar ───────────────────────────────────────────────────
     cargarZonas();
     cargarListaClips();
+    cargarListaCasos();
   </script>
 </body>
 </html>

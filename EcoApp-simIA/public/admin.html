@@ -361,9 +361,9 @@
   </div>
 
   <header class="header">
-    <a href="/control.html" id="volver-link" class="header-back">
+    <a href="/" class="header-back">
       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>
-      Panel de control
+      Inicio
     </a>
     <span class="header-title">Gestión de vídeos</span>
   </header>
@@ -451,7 +451,6 @@
     const params = new URLSearchParams(location.search);
     const sala   = params.get('sala');
     if (sala) {
-      document.getElementById('volver-link').href = `/control.html?sala=${encodeURIComponent(sala)}`;
     }
 
     // ── Contraseña de acceso ───────────────────────────────────────

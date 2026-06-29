@@ -35,8 +35,7 @@ const ICONO_PLAY  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" hei
 // Mostrar el código de sesión en la esquina de la silueta, por si se olvida copiar
 document.getElementById('sala-badge-codigo').textContent = sala;
 
-// El botón ☰ lleva la sala en la URL para poder volver con contexto
-document.getElementById('btn-menu').href = `/admin.html?sala=${encodeURIComponent(sala)}`;
+
 
 // ── Cargar catálogo ────────────────────────────────────────────────
 async function cargarCatalogo() {

@@ -343,6 +343,100 @@
       height: 18px;
       background: var(--border);
     }
+
+    /* ── FILTRO DE PRESELECCIÓN ── */
+    .filtro-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 8;
+      background: rgba(255,255,255,0.92);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 9px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      line-height: 1.25;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .filtro-badge:hover { border-color: var(--teal); }
+    .filtro-badge.activo { border-color: var(--teal); background: var(--teal-l); }
+    .filtro-badge-label {
+      display: block;
+      font-size: 7.5px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .filtro-badge-valor {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    .filtro-badge.activo .filtro-badge-valor { color: var(--teal); }
+
+    /* Menú desplegable del filtro */
+    .filtro-menu {
+      position: absolute;
+      top: 52px;
+      right: 6px;
+      z-index: 50;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      width: 220px;
+      overflow: hidden;
+      display: none;
+    }
+    .filtro-menu.visible { display: block; }
+    .filtro-menu-titulo {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 10px 12px 6px;
+    }
+    .filtro-opcion {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font);
+    }
+    .filtro-opcion:hover { background: var(--bg); }
+    .filtro-opcion.seleccionada { color: var(--teal); font-weight: 500; }
+    .filtro-opcion .filtro-check {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .filtro-opcion.seleccionada .filtro-check {
+      background: var(--teal);
+      border-color: var(--teal);
+    }
+    .filtro-separador { height: 0.5px; background: var(--border); margin: 4px 0; }
+
+    /* Probe resaltado / apagado por filtro */
+    .probe.filtro-disponible {
+      box-shadow: 0 0 0 2.5px var(--teal);
+    }
+    .probe.filtro-no-disponible {
+      opacity: 0.35;
+    }
   </style>
 </head>
 <body>
@@ -370,6 +464,16 @@
         <div class="sala-badge">
           <span class="sala-badge-label">Código de sesión</span>
           <span class="sala-badge-codigo" id="sala-badge-codigo"></span>
+        </div>
+
+        <button class="filtro-badge" id="filtro-badge">
+          <span class="filtro-badge-label">Preselección</span>
+          <span class="filtro-badge-valor" id="filtro-badge-valor">Todos</span>
+        </button>
+
+        <div class="filtro-menu" id="filtro-menu">
+          <div class="filtro-menu-titulo">Emitir directamente</div>
+          <div id="filtro-opciones"></div>
         </div>
 
         <!-- 1. Pulmonar apical D -->

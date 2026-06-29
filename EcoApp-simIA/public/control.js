@@ -12,6 +12,7 @@ let zonaActiva     = null; // zona seleccionada ahora
 let clipEmitiendo  = null; // clip que se está emitiendo
 let zonaEmitiendo  = null; // zona cuyo probe debe colorearse (verde/rojo)
 let congelado      = false;
+let filtroActivo   = null; // nombre del clip preseleccionado, o null = todos
 let segundos       = 0;
 let timerInterval  = null;
 
@@ -27,6 +28,10 @@ const connDot        = document.getElementById('conn-dot');
 const connTexto      = document.getElementById('conn-texto');
 const timerEl        = document.getElementById('timer');
 const btnCongelar    = document.getElementById('btn-congelar');
+const filtroBadge    = document.getElementById('filtro-badge');
+const filtroMenu     = document.getElementById('filtro-menu');
+const filtroOpciones = document.getElementById('filtro-opciones');
+const filtroBadgeValor = document.getElementById('filtro-badge-valor');
 const btnDetener     = document.getElementById('btn-detener');
 
 const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
@@ -41,13 +46,107 @@ document.getElementById('sala-badge-codigo').textContent = sala;
 async function cargarCatalogo() {
   const res  = await fetch('/api/clips');
   catalogoZonas = await res.json();
+  construirMenuFiltro();
 }
+
+// ── Menú de preselección ───────────────────────────────────────────
+function construirMenuFiltro() {
+  // Recoger todos los nombres únicos de clips del catálogo
+  const nombresSet = new Set();
+  catalogoZonas.forEach(z => z.clips.forEach(c => nombresSet.add(c.nombre)));
+  const nombres = Array.from(nombresSet).sort();
+
+  filtroOpciones.innerHTML = '';
+
+  // Opción "Todos" (sin filtro)
+  const opTodos = document.createElement('button');
+  opTodos.className = 'filtro-opcion seleccionada';
+  opTodos.innerHTML = '<span>Todos (sin filtro)</span><span class="filtro-check"></span>';
+  opTodos.addEventListener('click', () => aplicarFiltro(null));
+  filtroOpciones.appendChild(opTodos);
+
+  const sep = document.createElement('div');
+  sep.className = 'filtro-separador';
+  filtroOpciones.appendChild(sep);
+
+  nombres.forEach(nombre => {
+    const op = document.createElement('button');
+    op.className = 'filtro-opcion';
+    op.dataset.nombre = nombre;
+    op.innerHTML = `<span>${nombre}</span><span class="filtro-check"></span>`;
+    op.addEventListener('click', () => aplicarFiltro(nombre));
+    filtroOpciones.appendChild(op);
+  });
+}
+
+function aplicarFiltro(nombre) {
+  filtroActivo = nombre;
+  filtroMenu.classList.remove('visible');
+
+  // Actualizar badge
+  filtroBadgeValor.textContent = nombre || 'Todos';
+  filtroBadge.classList.toggle('activo', !!nombre);
+
+  // Marcar opción seleccionada
+  filtroOpciones.querySelectorAll('.filtro-opcion').forEach(op => {
+    const esEste = nombre ? op.dataset.nombre === nombre : !op.dataset.nombre;
+    op.classList.toggle('seleccionada', esEste);
+  });
+
+  // Resaltar probes según disponibilidad
+  actualizarResaltadoProbes();
+
+  // Cerrar dropdown si estaba abierto
+  cerrarDropdown();
+}
+
+function actualizarResaltadoProbes() {
+  document.querySelectorAll('.probe').forEach(btn => {
+    btn.classList.remove('filtro-disponible', 'filtro-no-disponible');
+    if (!filtroActivo) return;
+    const zona  = btn.dataset.zona;
+    const datos = catalogoZonas.find(z => z.zona === zona);
+    const tiene = datos && datos.clips.some(c => c.nombre === filtroActivo);
+    btn.classList.add(tiene ? 'filtro-disponible' : 'filtro-no-disponible');
+  });
+}
+
+// Toggle del menú de filtro
+filtroBadge.addEventListener('click', (e) => {
+  e.stopPropagation();
+  filtroMenu.classList.toggle('visible');
+  cerrarDropdown();
+});
+
+// Cerrar menú de filtro al pulsar fuera
+document.addEventListener('click', (e) => {
+  if (filtroMenu.classList.contains('visible') &&
+      !filtroMenu.contains(e.target) &&
+      e.target !== filtroBadge) {
+    filtroMenu.classList.remove('visible');
+  }
+});
 
 // ── Botones de probe (silueta) ─────────────────────────────────────
 document.querySelectorAll('.probe').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     const zona = btn.dataset.zona;
+
+    // Si hay filtro activo, emitir directamente sin abrir el menú
+    if (filtroActivo) {
+      const datos = catalogoZonas.find(z => z.zona === zona);
+      if (datos) {
+        const clip = datos.clips.find(c => c.nombre === filtroActivo);
+        if (clip) {
+          emitirClip(clip, datos);
+          return;
+        }
+      }
+      // Si esa zona no tiene el clip del filtro, no hace nada
+      return;
+    }
+
     if (zonaActiva === zona && dropdown.classList.contains('visible')) {
       cerrarDropdown();
       return;

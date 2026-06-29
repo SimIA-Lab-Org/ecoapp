@@ -501,19 +501,19 @@
       </div>
 
       <div class="campo">
-        <label>Zona anatómica *</label>
+        <label>Zona anatómica</label>
         <select id="sel-zona">
           <option value="">Cargando zonas...</option>
         </select>
       </div>
 
       <div class="campo">
-        <label>Nombre del clip *</label>
+        <label>Nombre del clip</label>
         <input type="text" id="inp-nombre" placeholder="Ej: Derrame pleural moderado">
       </div>
 
       <div class="campo">
-        <label>Descripción breve</label>
+        <label>Descripción breve (opcional)</label>
         <input type="text" id="inp-sub" placeholder="Ej: Vista paraesternal larga">
       </div>
 
@@ -576,22 +576,40 @@
     if (sala) {
     }
 
-    // ── Contraseña de acceso ───────────────────────────────────────
+    // ── Contraseña de acceso (verificada en servidor) ────────────────
     (function() {
-      var PWD      = 'Simiatech0.';
       var pantalla = document.getElementById('pantalla-pwd');
       var input    = document.getElementById('pwd-input');
       var btn      = document.getElementById('pwd-btn');
       var error    = document.getElementById('pwd-error');
-      function verificar() {
-        if (input.value === PWD) {
-          pantalla.style.display = 'none';
-        } else {
-          error.textContent = 'Contraseña incorrecta';
-          input.value = '';
-          input.focus();
+
+      async function verificar() {
+        var pwd = input.value;
+        if (!pwd) return;
+        btn.disabled = true;
+        btn.textContent = '...';
+        error.textContent = '';
+        try {
+          var resp = await fetch('/api/admin/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pwd: pwd })
+          });
+          if (resp.ok) {
+            pantalla.style.display = 'none';
+          } else {
+            error.textContent = 'Contraseña incorrecta';
+            input.value = '';
+            input.focus();
+          }
+        } catch(e) {
+          error.textContent = 'Error de conexión';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
         }
       }
+
       btn.addEventListener('click', verificar);
       input.addEventListener('keydown', function(e) { if (e.key === 'Enter') verificar(); });
       input.focus();

@@ -319,6 +319,17 @@ function cloudinaryDestroy(publicId) {
   });
 }
 
+// ── API: verificar contraseña de admin ────────────────────────────
+app.post('/api/admin/auth', (req, res) => {
+  const { pwd } = req.body;
+  const PWD = process.env.ADMIN_PASSWORD || 'Simiatech0.';
+  if (pwd === PWD) {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ ok: false });
+  }
+});
+
 // ── Salas ──────────────────────────────────────────────────────────
 // Cada sala tiene su propio estado y sus propios roles ocupados.
 // salas['ABCDE'] = { control: socket.id|null, eco: socket.id|null, estado: {...} }

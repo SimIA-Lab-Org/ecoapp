@@ -153,6 +153,70 @@ app.post('/api/admin/registrar', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── API: editar metadatos de un clip en Cloudinary ────────────────
+app.put('/api/admin/editar/:publicId(*)', async (req, res) => {
+  if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  try {
+    const publicId = req.params.publicId;
+    const { nombre, sub, patologico, zona, titulo_zona } = req.body;
+    if (!nombre || !zona) return res.status(400).json({ ok: false, error: 'Faltan datos' });
+
+    const contexto = `nombre=${nombre}|sub=${sub || ''}|patologico=${patologico ? 'true' : 'false'}|zona=${zona}|titulo_zona=${titulo_zona || zona}`;
+
+    const crypto    = require('crypto');
+    const timestamp = Math.floor(Date.now() / 1000);
+    const toSign    = `context=${contexto}&public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+    const postData = new URLSearchParams({
+      public_id: publicId, context: contexto,
+      timestamp, api_key: CLOUDINARY_KEY, signature
+    }).toString();
+
+    const reqOpts = {
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/video/explicit`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    await new Promise((resolve, reject) => {
+      const r = https.request(reqOpts, resp => {
+        let body = '';
+        resp.on('data', c => body += c);
+        resp.on('end', () => {
+          const json = JSON.parse(body);
+          if (json.error) reject(new Error(json.error.message));
+          else resolve(json);
+        });
+      });
+      r.on('error', reject);
+      r.write(postData);
+      r.end();
+    });
+
+    // Actualizar en memoria
+    const idx = clipsCloudinary.findIndex(c => c.id === publicId);
+    if (idx !== -1) {
+      clipsCloudinary[idx] = {
+        ...clipsCloudinary[idx],
+        nombre, sub: sub || '', patologico: !!patologico,
+        zona, titulo: titulo_zona || zona
+      };
+    }
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Error editando en Cloudinary:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── API: borrar vídeo de Cloudinary ───────────────────────────────
 app.delete('/api/admin/borrar/:publicId(*)', async (req, res) => {
   if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) {

@@ -346,9 +346,132 @@
       font-family: var(--font); cursor: pointer; display: block;
     }
     .pwd-error { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 16px; }
+
+    /* ── EDICIÓN Y VISTA PREVIA ── */
+    .clip-item { flex-wrap: wrap; }
+    .clip-acciones {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-editar {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-editar:hover { background: var(--teal-l); color: var(--teal); border-color: var(--teal); }
+    .btn-preview {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-preview:hover { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+
+    /* Panel de edición inline */
+    .clip-edit-panel {
+      display: none;
+      width: 100%;
+      background: var(--bg);
+      border-top: 0.5px solid var(--border);
+      margin-top: 10px;
+      padding-top: 12px;
+      gap: 10px;
+      flex-direction: column;
+    }
+    .clip-edit-panel.visible { display: flex; }
+    .edit-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .edit-campo { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+    .edit-campo label { font-size: 11px; font-weight: 500; color: var(--muted); }
+    .edit-campo input, .edit-campo select {
+      padding: 8px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      width: 100%;
+    }
+    .edit-campo input:focus, .edit-campo select:focus {
+      outline: none; border-color: var(--teal);
+    }
+    .edit-toggle-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .edit-toggle-row label { font-size: 13px; color: var(--text); flex: 1; }
+    .edit-acciones { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-guardar {
+      padding: 8px 16px;
+      background: var(--teal); color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+    }
+    .btn-cancelar-edit {
+      padding: 8px 16px;
+      background: none; color: var(--muted);
+      border: 0.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: var(--font); cursor: pointer;
+    }
+    .edit-msg { font-size: 12px; padding: 4px 0; }
+    .edit-msg.ok  { color: var(--green); }
+    .edit-msg.err { color: var(--red); }
+
+    /* Modal de vista previa */
+    #preview-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7);
+      align-items: center; justify-content: center;
+    }
+    #preview-modal.visible { display: flex; }
+    .preview-box {
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      max-width: 90vw;
+      max-height: 85vh;
+      position: relative;
+    }
+    .preview-box video {
+      display: block;
+      max-width: 85vw;
+      max-height: 80vh;
+    }
+    .preview-close {
+      position: absolute; top: 10px; right: 10px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      color: white; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .preview-close:hover { background: rgba(255,255,255,0.3); }
   </style>
 </head>
 <body>
+
+  <!-- Modal de vista previa -->
+  <div id="preview-modal">
+    <div class="preview-box">
+      <video id="preview-video" controls autoplay></video>
+      <button class="preview-close" id="preview-close">✕</button>
+    </div>
+  </div>
+
 
   <div id="pantalla-pwd">
     <div class="pwd-card">
@@ -662,16 +785,19 @@
     }
 
     // ── Cargar lista de clips en la nube ───────────────────────────
+    // ── Lista de clips con edición y previsualización ────────────────
+    let zonasCache = [];
+
     async function cargarListaClips() {
       const lista = document.getElementById('lista-clips');
       lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
       try {
         const zonas = await fetch('/api/clips').then(r => r.json());
-        // Filtrar solo clips con URL de Cloudinary (contienen "cloudinary.com")
+        zonasCache = zonas;
         const cloudClips = [];
         zonas.forEach(z => {
           z.clips.filter(c => c.archivo && c.archivo.includes('cloudinary')).forEach(c => {
-            cloudClips.push({ ...c, zona_titulo: z.titulo });
+            cloudClips.push({ ...c, zona_id: z.zona, zona_titulo: z.titulo });
           });
         });
 
@@ -680,8 +806,12 @@
           return;
         }
 
-        lista.innerHTML = cloudClips.map(c => `
-          <div class="clip-item" data-id="${c.id}">
+        lista.innerHTML = '';
+        cloudClips.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'clip-item';
+          item.dataset.id = c.id;
+          item.innerHTML = `
             <div class="clip-thumb">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/></svg>
             </div>
@@ -690,20 +820,133 @@
               <div class="clip-meta-sub">${c.zona_titulo}${c.sub ? ' · ' + c.sub : ''}</div>
             </div>
             <span class="badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
-            <button class="btn-borrar" onclick="borrarClip('${c.id}')" title="Eliminar vídeo">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-            </button>
-          </div>
-        `).join('');
+            <div class="clip-acciones">
+              <button class="btn-preview" title="Vista previa">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l4 3-4 3V8z" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <button class="btn-editar" title="Editar">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn-borrar" title="Eliminar">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+              </button>
+            </div>
+            <div class="clip-edit-panel">
+              <div class="edit-row">
+                <div class="edit-campo">
+                  <label>Nombre</label>
+                  <input type="text" class="edit-nombre" value="${c.nombre}">
+                </div>
+                <div class="edit-campo">
+                  <label>Descripción</label>
+                  <input type="text" class="edit-sub" value="${c.sub || ''}">
+                </div>
+              </div>
+              <div class="edit-row">
+                <div class="edit-campo">
+                  <label>Zona anatómica</label>
+                  <select class="edit-zona">${zonasCache.map(z => `<option value="${z.zona}" data-titulo="${z.titulo}" ${z.zona === c.zona_id ? 'selected' : ''}>${z.titulo}</option>`).join('')}</select>
+                </div>
+                <div class="edit-campo" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:8px;">
+                  <label style="font-size:13px;color:var(--text);margin:0;">Patológico</label>
+                  <label class="toggle" style="margin:0;">
+                    <input type="checkbox" class="edit-patologico" ${c.patologico ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="edit-acciones">
+                <span class="edit-msg"></span>
+                <button class="btn-cancelar-edit">Cancelar</button>
+                <button class="btn-guardar">Guardar</button>
+              </div>
+            </div>
+          `;
+
+          // Vista previa
+          item.querySelector('.btn-preview').addEventListener('click', () => abrirPreview(c.archivo));
+
+          // Toggle edición
+          item.querySelector('.btn-editar').addEventListener('click', () => {
+            const panel = item.querySelector('.clip-edit-panel');
+            panel.classList.toggle('visible');
+          });
+          item.querySelector('.btn-cancelar-edit').addEventListener('click', () => {
+            item.querySelector('.clip-edit-panel').classList.remove('visible');
+          });
+
+          // Guardar edición
+          item.querySelector('.btn-guardar').addEventListener('click', async () => {
+            const nombre    = item.querySelector('.edit-nombre').value.trim();
+            const sub       = item.querySelector('.edit-sub').value.trim();
+            const selZona   = item.querySelector('.edit-zona');
+            const zona      = selZona.value;
+            const tituloZona = selZona.options[selZona.selectedIndex].dataset.titulo || zona;
+            const patologico = item.querySelector('.edit-patologico').checked;
+            const msg        = item.querySelector('.edit-msg');
+
+            if (!nombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+
+            msg.textContent = 'Guardando...';
+            msg.className = 'edit-msg';
+
+            try {
+              const resp = await fetch('/api/admin/editar/' + encodeURIComponent(c.id), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, sub, patologico, zona, titulo_zona: tituloZona })
+              });
+              const json = await resp.json();
+              if (json.ok) {
+                msg.textContent = '¡Guardado!';
+                msg.className = 'edit-msg ok';
+                setTimeout(() => cargarListaClips(), 800);
+              } else {
+                msg.textContent = 'Error: ' + json.error;
+                msg.className = 'edit-msg err';
+              }
+            } catch (e) {
+              msg.textContent = 'Error de conexión';
+              msg.className = 'edit-msg err';
+            }
+          });
+
+          // Borrar
+          item.querySelector('.btn-borrar').addEventListener('click', () => borrarClip(c.id));
+
+          lista.appendChild(item);
+        });
       } catch (e) {
         lista.innerHTML = '<div class="lista-vacia">Error cargando la lista.</div>';
       }
     }
 
+    function abrirPreview(url) {
+      const modal = document.getElementById('preview-modal');
+      const video = document.getElementById('preview-video');
+      video.src = url;
+      video.play().catch(() => {});
+      modal.classList.add('visible');
+    }
+
+    document.getElementById('preview-close').addEventListener('click', () => {
+      const modal = document.getElementById('preview-modal');
+      const video = document.getElementById('preview-video');
+      video.pause();
+      video.src = '';
+      modal.classList.remove('visible');
+    });
+
+    document.getElementById('preview-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('preview-modal')) {
+        document.getElementById('preview-close').click();
+      }
+    });
+
     async function borrarClip(publicId) {
       if (!confirm('¿Eliminar este vídeo? Esta acción no se puede deshacer.')) return;
       try {
-        const resp = await fetch(`/api/admin/borrar/${encodeURIComponent(publicId)}`, { method: 'DELETE' });
+        const resp = await fetch('/api/admin/borrar/' + encodeURIComponent(publicId), { method: 'DELETE' });
         const json = await resp.json();
         if (json.ok) cargarListaClips();
         else alert('Error al borrar: ' + json.error);

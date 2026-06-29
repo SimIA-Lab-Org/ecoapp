@@ -323,101 +323,27 @@
 
     /* ── PANTALLA DE CONTRASEÑA ── */
     #pantalla-pwd {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 999;
     }
     .pwd-card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 18px;
-      padding: 2rem 1.8rem;
-      width: 92%;
-      max-width: 360px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-      text-align: center;
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 18px; padding: 2rem 1.8rem; width: 92%; max-width: 360px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07); text-align: center;
     }
-    .pwd-card .logo {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--teal);
-      margin-bottom: 6px;
-    }
-    .pwd-card p {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 1.4rem;
-    }
-    .pwd-input {
-      width: 100%;
-      padding: 11px 14px;
-      border: 0.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      text-align: center;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-    .pwd-input:focus { outline: none; border-color: var(--teal); background: var(--surface); }
-    .pwd-btn {
-      width: 100%;
-      padding: 12px;
-      background: var(--teal);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      font-family: var(--font);
-      cursor: pointer;
-    }
-    .pwd-error {
-      font-size: 12px;
-      color: var(--red);
-      margin-top: 8px;
-      min-height: 16px;
-    }
-
-    /* ── PANTALLA DE CONTRASEÑA ── */
-    #pantalla-pwd {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-    .pwd-card {
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: 18px;
-      padding: 2rem 1.8rem;
-      width: 92%;
-      max-width: 360px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-      text-align: center;
-    }
-    .pwd-card .logo { font-size: 20px; font-weight: 700; color: var(--teal); margin-bottom: 6px; }
-    .pwd-card p { font-size: 13px; color: var(--muted); margin-bottom: 1.4rem; }
+    .pwd-logo { font-size: 20px; font-weight: 700; color: var(--teal); margin-bottom: 6px; }
+    .pwd-desc { font-size: 13px; color: var(--muted); margin-bottom: 1.4rem; }
     .pwd-input {
       width: 100%; padding: 11px 14px; border: 0.5px solid var(--border);
       border-radius: 10px; font-size: 15px; font-family: var(--font);
       background: var(--bg); color: var(--text); text-align: center;
-      letter-spacing: 2px; margin-bottom: 10px;
+      letter-spacing: 2px; margin-bottom: 10px; display: block;
     }
     .pwd-input:focus { outline: none; border-color: var(--teal); background: var(--surface); }
     .pwd-btn {
       width: 100%; padding: 12px; background: var(--teal); color: white;
       border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
-      font-family: var(--font); cursor: pointer;
+      font-family: var(--font); cursor: pointer; display: block;
     }
     .pwd-error { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 16px; }
   </style>
@@ -426,25 +352,13 @@
 
   <div id="pantalla-pwd">
     <div class="pwd-card">
-      <div class="logo">EcoApp SimIA</div>
-      <p>Introduce la contraseña para acceder a la gestión de vídeos</p>
+      <div class="pwd-logo">EcoApp SimIA</div>
+      <p class="pwd-desc">Introduce la contraseña para acceder a la gestión de vídeos</p>
       <input class="pwd-input" id="pwd-input" type="password" placeholder="••••••••••" maxlength="30">
       <button class="pwd-btn" id="pwd-btn">Entrar</button>
       <p class="pwd-error" id="pwd-error"></p>
     </div>
   </div>
-
-
-  <div id="pantalla-pwd">
-    <div class="pwd-card">
-      <div class="logo">EcoApp SimIA</div>
-      <p>Introduce la contraseña para acceder a la gestión de vídeos</p>
-      <input class="pwd-input" id="pwd-input" type="password" placeholder="••••••••••" maxlength="30">
-      <button class="pwd-btn" id="pwd-btn">Entrar</button>
-      <p class="pwd-error" id="pwd-error"></p>
-    </div>
-  </div>
-
 
   <header class="header">
     <a href="/control.html" id="volver-link" class="header-back">
@@ -540,14 +454,13 @@
       document.getElementById('volver-link').href = `/control.html?sala=${encodeURIComponent(sala)}`;
     }
 
-
     // ── Contraseña de acceso ───────────────────────────────────────
     (function() {
-      const PWD = 'Simiatech0.';
-      const pantalla = document.getElementById('pantalla-pwd');
-      const input    = document.getElementById('pwd-input');
-      const btn      = document.getElementById('pwd-btn');
-      const error    = document.getElementById('pwd-error');
+      var PWD      = 'Simiatech0.';
+      var pantalla = document.getElementById('pantalla-pwd');
+      var input    = document.getElementById('pwd-input');
+      var btn      = document.getElementById('pwd-btn');
+      var error    = document.getElementById('pwd-error');
       function verificar() {
         if (input.value === PWD) {
           pantalla.style.display = 'none';
@@ -558,7 +471,7 @@
         }
       }
       btn.addEventListener('click', verificar);
-      input.addEventListener('keydown', e => { if (e.key === 'Enter') verificar(); });
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') verificar(); });
       input.focus();
     })();
 

@@ -367,7 +367,7 @@ app.post('/api/admin/casos', async (req, res) => {
     const publicId  = `ecoapp-casos/${casoId}`;
 
     // Subir JSON como raw a Cloudinary
-    const toSign  = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    const toSign  = `overwrite=true&public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
     const signature = crypto.createHash('sha1').update(toSign).digest('hex');
 
     const boundary = '----FormBoundary' + Date.now();

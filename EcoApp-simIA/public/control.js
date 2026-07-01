@@ -201,12 +201,24 @@ filtroBadge.addEventListener('click', (e) => {
   cerrarDropdown();
 });
 
+// Al clicar el panel de caso activo, abre el menú para cambiar de filtro/caso
+casoActivoPanel.addEventListener('click', (e) => {
+  e.stopPropagation();
+  // Mostrar temporalmente el filtroBadge y abrir el menú
+  filtroBadge.style.display = '';
+  filtroMenu.classList.add('visible');
+  cerrarDropdown();
+});
+
 // Cerrar menú de filtro al pulsar fuera
 document.addEventListener('click', (e) => {
   if (filtroMenu.classList.contains('visible') &&
       !filtroMenu.contains(e.target) &&
-      e.target !== filtroBadge) {
+      e.target !== filtroBadge &&
+      !casoActivoPanel.contains(e.target)) {
     filtroMenu.classList.remove('visible');
+    // Si hay caso activo, volver a ocultar el badge de filtro
+    if (casoActivo) filtroBadge.style.display = 'none';
   }
 });
 

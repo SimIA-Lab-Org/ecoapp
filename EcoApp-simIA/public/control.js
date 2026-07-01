@@ -156,7 +156,7 @@ function aplicarFiltro(nombre) {
   casoClipsEmitidos = [];
   filtroMenu.classList.remove('visible');
 
-  // Limpiar indicadores de probes
+  // Limpiar indicadores de probes y restaurar números
   document.querySelectorAll('.probe-indicator').forEach(el => el.remove());
 
   // Mostrar badge de filtro, ocultar panel de caso

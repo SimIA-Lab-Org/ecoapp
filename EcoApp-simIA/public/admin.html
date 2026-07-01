@@ -1198,11 +1198,17 @@
                 <label>Nombre del caso</label>
                 <input type="text" class="edit-caso-nombre" value="${caso.nombre}">
               </div>
-              <div class="campo" style="margin-bottom:0">
+              <div class="campo" style="margin-bottom:8px">
                 <label>Descripción (opcional)</label>
                 <input type="text" class="edit-caso-desc" value="${caso.descripcion || ''}">
               </div>
-              <div class="edit-acciones">
+              <div class="campo" style="margin-bottom:0">
+                <label>Clips del caso</label>
+                <div class="clips-selector edit-clips-selector">
+                  <div class="lista-vacia" style="padding:10px">Cargando clips...</div>
+                </div>
+              </div>
+              <div class="edit-acciones" style="margin-top:10px">
                 <span class="edit-msg caso-edit-msg"></span>
                 <button class="btn-cancelar-edit btn-cancelar-caso">Cancelar</button>
                 <button class="btn-guardar btn-guardar-caso-edit">Guardar</button>
@@ -1216,10 +1222,39 @@
             item.querySelector('.caso-edit-panel').classList.remove('visible');
           });
 
-          // Botón editar: mostrar/ocultar panel de edición
-          item.querySelector('.btn-editar-caso').addEventListener('click', () => {
-            item.querySelector('.caso-edit-panel').classList.toggle('visible');
+          // Botón editar: mostrar/ocultar panel de edición y poblar clips
+          item.querySelector('.btn-editar-caso').addEventListener('click', async () => {
+            const panel = item.querySelector('.caso-edit-panel');
+            const yaVisible = panel.classList.contains('visible');
+            panel.classList.toggle('visible');
             item.querySelector('.caso-clips-lista').classList.remove('visible');
+            if (!yaVisible) {
+              // Poblar selector de clips con los del caso ya marcados
+              const selector = item.querySelector('.edit-clips-selector');
+              selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Cargando...</div>';
+              try {
+                const zonas = await fetch('/api/clips').then(r => r.json());
+                selector.innerHTML = '';
+                const idsActuales = new Set(caso.clips.map(c => c.id));
+                zonas.forEach(z => {
+                  if (!z.clips || z.clips.length === 0) return;
+                  const grupo = document.createElement('div');
+                  grupo.className = 'zona-grupo';
+                  grupo.innerHTML = '<div class="zona-grupo-titulo">' + z.titulo + '</div>' +
+                    z.clips.map(c => {
+                      const marcado = idsActuales.has(c.id) ? 'checked' : '';
+                      return '<label class="clip-check-row">' +
+                        '<input type="checkbox" ' + marcado + ' data-id="' + c.id + '" data-zona="' + z.zona + '" data-zona-titulo="' + z.titulo + '" data-nombre="' + c.nombre + '" data-archivo="' + c.archivo + '" data-patologico="' + c.patologico + '" data-sub="' + (c.sub||'') + '">' +
+                        '<span class="clip-check-nombre">' + c.nombre + '</span>' +
+                        '<span class="clip-check-badge ' + (c.patologico ? 'badge-p' : 'badge-n') + '">' + (c.patologico ? 'Patológico' : 'Normal') + '</span>' +
+                        '</label>';
+                    }).join('');
+                  selector.appendChild(grupo);
+                });
+              } catch(e) {
+                selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Error cargando clips.</div>';
+              }
+            }
           });
 
           // Cancelar edición
@@ -1233,12 +1268,20 @@
             const nuevaDesc   = item.querySelector('.edit-caso-desc').value.trim();
             const msg         = item.querySelector('.caso-edit-msg');
             if (!nuevoNombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+            // Recoger clips seleccionados
+            const checkboxes = item.querySelectorAll('.edit-clips-selector input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) { msg.textContent = 'Selecciona al menos un clip'; msg.className = 'edit-msg err'; return; }
+            const nuevosClips = Array.from(checkboxes).map(cb => ({
+              id: cb.dataset.id, zona: cb.dataset.zona, zona_titulo: cb.dataset.zonaTitulo,
+              nombre: cb.dataset.nombre, archivo: cb.dataset.archivo,
+              patologico: cb.dataset.patologico === 'true', sub: cb.dataset.sub || ''
+            }));
             msg.textContent = 'Guardando...'; msg.className = 'edit-msg';
             try {
               const resp = await fetch('/api/admin/casos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: caso.id, nombre: nuevoNombre, descripcion: nuevaDesc, clips: caso.clips })
+                body: JSON.stringify({ id: caso.id, nombre: nuevoNombre, descripcion: nuevaDesc, clips: nuevosClips })
               });
               const json = await resp.json();
               if (json.ok) {

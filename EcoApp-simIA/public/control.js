@@ -32,7 +32,6 @@ const timerEl        = document.getElementById('timer');
 const btnCongelar    = document.getElementById('btn-congelar');
 const filtroBadge    = document.getElementById('filtro-badge');
 const filtroMenu     = document.getElementById('filtro-menu');
-const filtroOpciones = document.getElementById('filtro-opciones');
 const filtroBadgeValor = document.getElementById('filtro-badge-valor');
 const casoActivoPanel  = document.getElementById('caso-activo-panel');
 const casoActivoNombre = document.getElementById('caso-activo-nombre');
@@ -54,55 +53,50 @@ async function cargarCatalogo() {
   await construirMenuFiltro();
 }
 
-// ── Menú de preselección ───────────────────────────────────────────
+// ── Menú de preselección — chips ──────────────────────────────────
 async function construirMenuFiltro() {
-  filtroOpciones.innerHTML = '';
+  // ── Casos clínicos ──
+  const casosWrap  = document.getElementById('filtro-casos-wrap');
+  const casosChips = document.getElementById('filtro-casos-chips');
+  casosChips.innerHTML = '';
 
-  // ── Sección: Casos clínicos ──
   let casos = [];
   try { casos = await fetch('/api/casos').then(r => r.json()); } catch(e) {}
 
   if (casos.length > 0) {
-    const titCasos = document.createElement('div');
-    titCasos.className = 'filtro-seccion-titulo';
-    titCasos.textContent = 'Casos clínicos';
-    filtroOpciones.appendChild(titCasos);
-
+    casosWrap.style.display = '';
     casos.forEach(caso => {
-      const op = document.createElement('button');
-      op.className = 'filtro-opcion caso';
-      op.dataset.casoId = caso.id;
-      op.innerHTML = `<span>${caso.nombre}</span><span class="filtro-check"></span>`;
-      op.addEventListener('click', () => aplicarCaso(caso));
-      filtroOpciones.appendChild(op);
+      const chip = document.createElement('button');
+      chip.className = 'chip caso';
+      chip.dataset.casoId = caso.id;
+      chip.textContent = caso.nombre;
+      chip.addEventListener('click', () => aplicarCaso(caso));
+      casosChips.appendChild(chip);
     });
-
-    const sep = document.createElement('div');
-    sep.className = 'filtro-separador';
-    filtroOpciones.appendChild(sep);
+  } else {
+    casosWrap.style.display = 'none';
   }
 
-  // ── Sección: Filtro rápido ──
-  const titFiltro = document.createElement('div');
-  titFiltro.className = 'filtro-seccion-titulo';
-  titFiltro.textContent = 'Filtro rápido';
-  filtroOpciones.appendChild(titFiltro);
+  // ── Filtro rápido ──
+  const rapidoChips = document.getElementById('filtro-rapido-chips');
+  rapidoChips.innerHTML = '';
 
-  const opTodos = document.createElement('button');
-  opTodos.className = 'filtro-opcion filtro-rapido seleccionada';
-  opTodos.innerHTML = '<span>Todos (sin filtro)</span><span class="filtro-check"></span>';
-  opTodos.addEventListener('click', () => aplicarFiltro(null));
-  filtroOpciones.appendChild(opTodos);
+  const chipTodos = document.createElement('button');
+  chipTodos.className = 'chip todos activo';
+  chipTodos.id = 'chip-todos';
+  chipTodos.textContent = 'Todos';
+  chipTodos.addEventListener('click', () => aplicarFiltro(null));
+  rapidoChips.appendChild(chipTodos);
 
   const nombresSet = new Set();
   catalogoZonas.forEach(z => z.clips.forEach(c => nombresSet.add(c.nombre)));
   Array.from(nombresSet).sort().forEach(nombre => {
-    const op = document.createElement('button');
-    op.className = 'filtro-opcion filtro-rapido';
-    op.dataset.nombre = nombre;
-    op.innerHTML = `<span>${nombre}</span><span class="filtro-check"></span>`;
-    op.addEventListener('click', () => aplicarFiltro(nombre));
-    filtroOpciones.appendChild(op);
+    const chip = document.createElement('button');
+    chip.className = 'chip rapido';
+    chip.dataset.nombre = nombre;
+    chip.textContent = nombre;
+    chip.addEventListener('click', () => aplicarFiltro(nombre));
+    rapidoChips.appendChild(chip);
   });
 }
 
@@ -119,12 +113,10 @@ function aplicarCaso(caso) {
   casoActivoNombre.textContent = caso.nombre;
   actualizarPanelCaso();
 
-  // Marcar opción seleccionada
-  filtroOpciones.querySelectorAll('.filtro-opcion').forEach(op => {
-    op.classList.toggle('seleccionada', op.dataset.casoId === caso.id);
-  });
+  // Marcar chip seleccionado
+  document.querySelectorAll('.chip.caso').forEach(c => c.classList.toggle('activo', c.dataset.casoId === caso.id));
+  document.querySelectorAll('.chip.rapido, .chip.todos').forEach(c => c.classList.remove('activo'));
 
-  // Resaltar probes
   actualizarResaltadoProbes();
   cerrarDropdown();
 }
@@ -155,11 +147,11 @@ function aplicarFiltro(nombre) {
   filtroBadge.classList.remove('activo', 'modo-filtro', 'modo-caso');
   if (nombre) filtroBadge.classList.add('activo', 'modo-filtro');
 
-  // Marcar opción seleccionada
-  filtroOpciones.querySelectorAll('.filtro-opcion').forEach(op => {
-    const esEste = nombre ? op.dataset.nombre === nombre : (!op.dataset.nombre && op.classList.contains('filtro-rapido'));
-    op.classList.toggle('seleccionada', esEste);
-  });
+  // Marcar chip seleccionado
+  document.querySelectorAll('.chip.rapido').forEach(c => c.classList.toggle('activo', c.dataset.nombre === nombre));
+  const chipTodos = document.getElementById('chip-todos');
+  if (chipTodos) chipTodos.classList.toggle('activo', !nombre);
+  document.querySelectorAll('.chip.caso').forEach(c => c.classList.remove('activo'));
 
   actualizarResaltadoProbes();
   cerrarDropdown();

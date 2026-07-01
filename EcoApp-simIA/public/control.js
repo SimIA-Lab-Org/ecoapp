@@ -33,9 +33,9 @@ const btnCongelar    = document.getElementById('btn-congelar');
 const filtroBadge    = document.getElementById('filtro-badge');
 const filtroMenu     = document.getElementById('filtro-menu');
 const filtroBadgeValor = document.getElementById('filtro-badge-valor');
-const casoActivoPanel  = document.getElementById('caso-activo-panel');
-const casoActivoNombre = document.getElementById('caso-activo-nombre');
-const casoActivoClips  = document.getElementById('caso-activo-clips');
+const casoActivoPanel    = document.getElementById('caso-activo-panel');
+const casoActivoNombre   = document.getElementById('caso-activo-nombre');
+const casoActivoContador = document.getElementById('caso-activo-contador');
 const btnDetener     = document.getElementById('btn-detener');
 
 const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
@@ -111,6 +111,7 @@ function aplicarCaso(caso) {
   filtroBadge.style.display = 'none';
   casoActivoPanel.classList.add('visible');
   casoActivoNombre.textContent = caso.nombre;
+  casoActivoContador.textContent = `0/${caso.clips.length}`;
   actualizarPanelCaso();
 
   // Marcar chip seleccionado
@@ -123,13 +124,30 @@ function aplicarCaso(caso) {
 
 function actualizarPanelCaso() {
   if (!casoActivo) return;
-  casoActivoClips.innerHTML = casoActivo.clips.map(c => {
-    const emitido = casoClipsEmitidos.includes(c.id);
-    return `<div class="caso-clip-row ${emitido ? 'emitido' : ''}">
-      <span class="caso-clip-dot"></span>
-      <span>${c.zona_titulo} · ${c.nombre}</span>
-    </div>`;
-  }).join('');
+
+  // Actualizar contador
+  const total   = casoActivo.clips.length;
+  const emitidos = casoClipsEmitidos.length;
+  casoActivoContador.textContent = `${emitidos}/${total}`;
+
+  // Actualizar indicadores sobre los probes
+  // Primero limpiar todos
+  document.querySelectorAll('.probe-indicator').forEach(el => el.remove());
+
+  // Añadir indicador a cada probe que tenga clip en el caso
+  document.querySelectorAll('.probe').forEach(btn => {
+    const zona = btn.dataset.zona;
+    const clipCaso = casoActivo.clips.find(c => c.zona === zona);
+    if (!clipCaso) return;
+
+    const emitido = casoClipsEmitidos.includes(clipCaso.id);
+    const ind = document.createElement('div');
+    ind.className = 'probe-indicator ' + (emitido ? 'emitido' : 'pendiente');
+    ind.innerHTML = emitido
+      ? '<svg viewBox="0 0 24 24" width="9" height="9" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      : '';
+    btn.appendChild(ind);
+  });
 }
 
 function aplicarFiltro(nombre) {
@@ -137,6 +155,9 @@ function aplicarFiltro(nombre) {
   casoActivo        = null;
   casoClipsEmitidos = [];
   filtroMenu.classList.remove('visible');
+
+  // Limpiar indicadores de probes
+  document.querySelectorAll('.probe-indicator').forEach(el => el.remove());
 
   // Mostrar badge de filtro, ocultar panel de caso
   filtroBadge.style.display = '';

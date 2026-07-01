@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monitor Eco · EcoApp SimIA</title>
+  <style>
+    @font-face {
+      font-family: 'Digital7';
+      src: url('https://fonts.cdnfonts.com/s/1027/digital-7.woff') format('woff');
+    }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -58,37 +64,47 @@
       display: none;
     }
 
-    /* Badge congelado */
-    #eco-frozen {
+    /* Overlay ecógrafo */
+    #eco-overlay {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(0,0,0,0.55);
-      color: rgba(255,255,255,0.85);
-      font-size: 13px;
-      padding: 6px 14px;
-      border-radius: 20px;
+      inset: 0;
       z-index: 10;
-      display: none;
-      backdrop-filter: blur(4px);
+      pointer-events: none;
+      font-family: 'Digital7', 'Courier New', monospace;
     }
 
-    /* Badge zona (muestra qué punto está activo) */
-    #eco-zona {
+    /* Fecha y hora — esquina superior izquierda */
+    #eco-datetime {
       position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.55);
-      color: rgba(255,255,255,0.75);
-      font-size: 12px;
-      padding: 5px 14px;
-      border-radius: 20px;
-      z-index: 10;
-      display: none;
-      backdrop-filter: blur(4px);
-      white-space: nowrap;
+      top: 14px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
     }
+    #eco-fecha, #eco-hora {
+      font-size: clamp(11px, 2vw, 15px);
+      font-weight: 700;
+      color: #00ff88;
+      text-shadow: 0 0 6px rgba(0,255,136,0.6);
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+
+    /* FREEZE — esquina superior derecha */
+    #eco-frozen-badge {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: clamp(10px, 1.8vw, 13px);
+      font-weight: 700;
+      color: #ffdd00;
+      text-shadow: 0 0 6px rgba(255,221,0,0.7);
+      letter-spacing: 0.1em;
+      display: none;
+    }
+
+
 
     .icon-inline {
       display: inline-flex;
@@ -108,8 +124,18 @@
   </div>
 
   <div id="eco-negro"></div>
-  <div id="eco-frozen"><svg class="icon-inline" viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Imagen congelada</div>
-  <div id="eco-zona"></div>
+
+  <!-- Overlay estilo ecógrafo -->
+  <div id="eco-overlay">
+    <div id="eco-datetime">
+      <span id="eco-fecha"></span>
+      <span id="eco-hora"></span>
+    </div>
+    <div id="eco-frozen-badge">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>FREEZE
+    </div>
+  </div>
+
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/socket-transporte.js"></script>
@@ -120,12 +146,31 @@
       alert('No se ha indicado ninguna sala. Volviendo al inicio.');
       window.location.href = '/';
     }
-    const socket  = crearTransporte(sala, 'eco');
-    const video    = document.getElementById('eco-video');
-    const espera   = document.getElementById('eco-espera');
-    const negro    = document.getElementById('eco-negro');
-    const frozen   = document.getElementById('eco-frozen');
-    const zonaEl   = document.getElementById('eco-zona');
+    const socket      = crearTransporte(sala, 'eco');
+    const video       = document.getElementById('eco-video');
+    const espera      = document.getElementById('eco-espera');
+    const negro       = document.getElementById('eco-negro');
+    const frozenBadge = document.getElementById('eco-frozen-badge');
+    const ecoFecha    = document.getElementById('eco-fecha');
+    const ecoHora     = document.getElementById('eco-hora');
+
+    // Reloj en tiempo real
+    function actualizarReloj() {
+      const ahora = new Date();
+      const dias = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+      const meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+      const d = String(ahora.getDate()).padStart(2,'0');
+      const m = meses[ahora.getMonth()];
+      const y = ahora.getFullYear();
+      const dia = dias[ahora.getDay()];
+      ecoFecha.textContent = `${dia} ${d}-${m}-${y}`;
+      const h = String(ahora.getHours()).padStart(2,'0');
+      const min = String(ahora.getMinutes()).padStart(2,'0');
+      const s = String(ahora.getSeconds()).padStart(2,'0');
+      ecoHora.textContent = `${h}:${min}:${s}`;
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
 
     // Estado inicial al conectarse
     socket.on('estado-inicial', (estado) => {
@@ -150,31 +195,22 @@
       espera.style.display = 'none';
       video.src = clip.archivo;
       video.play().catch(() => {});
-      // Solo se muestra la zona anatómica (p. ej. "Pulmonar apical derecho"),
-      // el alumno debe interpretar él mismo si lo que ve es normal o patológico.
-      if (clip.zona) {
-        zonaEl.textContent   = clip.zona;
-        zonaEl.style.display = 'block';
-      } else {
-        zonaEl.style.display = 'none';
-      }
     }
 
     function limpiarVideo() {
       video.pause();
-      video.src            = '';
-      espera.style.display = 'flex';
-      zonaEl.style.display = 'none';
-      frozen.style.display = 'none';
+      video.src              = '';
+      espera.style.display   = 'flex';
+      frozenBadge.style.display = 'none';
     }
 
     function congelar(valor) {
       if (valor) {
         video.pause();
-        frozen.style.display = 'block';
+        frozenBadge.style.display = 'block';
       } else {
         video.play().catch(() => {});
-        frozen.style.display = 'none';
+        frozenBadge.style.display = 'none';
       }
     }
 

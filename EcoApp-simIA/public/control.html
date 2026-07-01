@@ -420,15 +420,15 @@
     .chip.caso.activo  { background: var(--morado);    color: white; }
     .chip.rapido       { border-color: var(--border);  color: var(--text);    background: var(--bg); }
     .chip.rapido.activo{ background: var(--naranja);   color: white; border-color: var(--naranja); }
-    .chip.todos        { border-color: var(--border); }
-    .chip.todos.activo { background: var(--text); color: white; border-color: var(--text); }
+    .chip.todos        { border-color: var(--teal); color: var(--teal); background: var(--teal-l); }
+    .chip.todos.activo { background: var(--teal); color: white; border-color: var(--teal); }
 
     .filtro-separador { height: 0.5px; background: var(--border); margin: 8px 0; }
 
     /* Probe resaltado / apagado por filtro */
-    .probe.filtro-disponible  { box-shadow: 0 0 0 2.5px var(--naranja); }
-    .probe.caso-disponible    { box-shadow: 0 0 0 2.5px var(--morado); }
-    .probe.filtro-no-disponible { opacity: 0.35; }
+    .probe.filtro-disponible  { border-color: var(--naranja); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    .probe.caso-disponible    { border-color: var(--morado);  box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    .probe.filtro-no-disponible { opacity: 0.35; border-color: transparent; }
 
     /* Badge caso activo — compacto, solo nombre + contador */
     .caso-activo-panel {

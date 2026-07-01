@@ -21,6 +21,8 @@
       --red-l:   #fbeaea;
       --green:   #1e6b2e;
       --green-l: #e4f5e8;
+      --morado:  #6b4fa8;
+      --morado-l: #f0eaf9;
       --font:    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
@@ -666,6 +668,7 @@
         </button>
       </div>
       <div id="lista-clips"></div>
+    </div>
 
     <!-- Casos clínicos -->
     <div class="card">
@@ -1116,6 +1119,157 @@
     }
 
     document.getElementById('btn-refrescar').addEventListener('click', cargarListaClips);
+
+    // ── Tabs de casos clínicos ─────────────────────────────────────
+    document.getElementById('tab-lista-btn').addEventListener('click', () => {
+      document.getElementById('tab-lista-btn').classList.add('activa');
+      document.getElementById('tab-nuevo-btn').classList.remove('activa');
+      document.getElementById('tab-lista').classList.add('visible');
+      document.getElementById('tab-nuevo').classList.remove('visible');
+    });
+    document.getElementById('tab-nuevo-btn').addEventListener('click', () => {
+      document.getElementById('tab-nuevo-btn').classList.add('activa');
+      document.getElementById('tab-lista-btn').classList.remove('activa');
+      document.getElementById('tab-nuevo').classList.add('visible');
+      document.getElementById('tab-lista').classList.remove('visible');
+      poblarSelectorClips();
+    });
+
+    // ── Cargar lista de casos ──────────────────────────────────────
+    async function cargarListaCasos() {
+      const lista = document.getElementById('lista-casos');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const casos = await fetch('/api/admin/casos').then(r => r.json());
+        if (casos.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">No hay casos clínicos guardados.<br>Usa la pestaña "+ Nuevo caso" para crear uno.</div>';
+          return;
+        }
+        lista.innerHTML = '';
+        casos.forEach(caso => {
+          const item = document.createElement('div');
+          item.className = 'caso-item';
+          item.innerHTML = `
+            <div class="caso-header">
+              <div class="caso-dot"></div>
+              <div class="caso-meta">
+                <div class="caso-nombre">${caso.nombre}</div>
+                ${caso.descripcion ? `<div class="caso-desc">${caso.descripcion}</div>` : ''}
+              </div>
+              <span class="caso-clips-count">${caso.clips.length} clip${caso.clips.length !== 1 ? 's' : ''}</span>
+              <div class="caso-acciones">
+                <button class="btn-borrar btn-borrar-caso" title="Eliminar caso">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="caso-clips-lista">
+              ${caso.clips.map(c => `
+                <div class="caso-clip-row">
+                  <span class="caso-clip-zona">${c.zona_titulo || c.zona}</span>
+                  <span class="caso-clip-nombre">${c.nombre}</span>
+                  <span class="clip-check-badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
+                </div>`).join('')}
+            </div>
+          `;
+          item.querySelector('.btn-borrar-caso').addEventListener('click', () => borrarCaso(caso.id));
+          lista.appendChild(item);
+        });
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando los casos.</div>';
+      }
+    }
+
+    // ── Poblar selector de clips para nuevo caso ──────────────────
+    async function poblarSelectorClips() {
+      const selector = document.getElementById('clips-selector');
+      selector.innerHTML = '<div class="lista-vacia">Cargando clips...</div>';
+      try {
+        const zonas = await fetch('/api/clips').then(r => r.json());
+        selector.innerHTML = '';
+        zonas.forEach(z => {
+          if (!z.clips || z.clips.length === 0) return;
+          const grupo = document.createElement('div');
+          grupo.className = 'zona-grupo';
+          grupo.innerHTML = `<div class="zona-grupo-titulo">${z.titulo}</div>` +
+            z.clips.map(c => `
+              <label class="clip-check-row">
+                <input type="checkbox" data-id="${c.id}" data-zona="${z.zona}" data-zona-titulo="${z.titulo}" data-nombre="${c.nombre}" data-archivo="${c.archivo}" data-patologico="${c.patologico}" data-sub="${c.sub || ''}">
+                <span class="clip-check-nombre">${c.nombre}</span>
+                <span class="clip-check-badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
+              </label>`).join('');
+          selector.appendChild(grupo);
+        });
+      } catch (e) {
+        selector.innerHTML = '<div class="lista-vacia">Error cargando clips.</div>';
+      }
+    }
+
+    // ── Guardar nuevo caso ────────────────────────────────────────
+    document.getElementById('btn-guardar-caso').addEventListener('click', async () => {
+      const nombre      = document.getElementById('caso-nombre').value.trim();
+      const descripcion = document.getElementById('caso-desc').value.trim();
+      const msg         = document.getElementById('caso-msg');
+
+      if (!nombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+
+      const checkboxes = document.querySelectorAll('#clips-selector input[type="checkbox"]:checked');
+      if (checkboxes.length === 0) { msg.textContent = 'Selecciona al menos un clip'; msg.className = 'edit-msg err'; return; }
+
+      const clips = Array.from(checkboxes).map(cb => ({
+        id:          cb.dataset.id,
+        zona:        cb.dataset.zona,
+        zona_titulo: cb.dataset.zonaTitulo,
+        nombre:      cb.dataset.nombre,
+        archivo:     cb.dataset.archivo,
+        patologico:  cb.dataset.patologico === 'true',
+        sub:         cb.dataset.sub || ''
+      }));
+
+      msg.textContent = 'Guardando...';
+      msg.className = 'edit-msg';
+
+      try {
+        const resp = await fetch('/api/admin/casos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, descripcion, clips })
+        });
+        const json = await resp.json();
+        if (json.ok) {
+          msg.textContent = '¡Caso guardado!';
+          msg.className = 'edit-msg ok';
+          document.getElementById('caso-nombre').value = '';
+          document.getElementById('caso-desc').value = '';
+          document.querySelectorAll('#clips-selector input[type="checkbox"]').forEach(cb => cb.checked = false);
+          setTimeout(() => {
+            document.getElementById('tab-lista-btn').click();
+            cargarListaCasos();
+            msg.textContent = '';
+          }, 800);
+        } else {
+          msg.textContent = 'Error: ' + json.error;
+          msg.className = 'edit-msg err';
+        }
+      } catch (e) {
+        msg.textContent = 'Error de conexión';
+        msg.className = 'edit-msg err';
+      }
+    });
+
+    // ── Borrar caso ───────────────────────────────────────────────
+    async function borrarCaso(casoId) {
+      if (!confirm('¿Eliminar este caso clínico? Esta acción no se puede deshacer.')) return;
+      try {
+        const resp = await fetch('/api/admin/casos/' + encodeURIComponent(casoId), { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) cargarListaCasos();
+        else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
 
     // ── Arrancar ───────────────────────────────────────────────────
     cargarZonas();

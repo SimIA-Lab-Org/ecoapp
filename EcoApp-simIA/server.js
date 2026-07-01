@@ -25,17 +25,23 @@ async function cargarCasosClinicos() {
   if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) return;
   try {
     const auth = Buffer.from(`${CLOUDINARY_KEY}:${CLOUDINARY_SECRET}`).toString('base64');
+    // type=upload y prefix exacto del folder donde se guardan los JSON
     const data = await httpGet(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/raw?max_results=500&tags=true&prefix=ecoapp-casos`,
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/raw?type=upload&max_results=500&prefix=ecoapp-casos/`,
       { Authorization: `Basic ${auth}` }
     );
-    const recursos = JSON.parse(data).resources || [];
+    const parsed = JSON.parse(data);
+    const recursos = parsed.resources || [];
     const casos = [];
     for (const r of recursos) {
       try {
-        const json = await httpGet(r.secure_url);
-        casos.push(JSON.parse(json));
-      } catch(e) {}
+        // Descargar el JSON usando autenticación Basic (los raw pueden ser privados)
+        const json = await httpGet(r.secure_url, { Authorization: `Basic ${auth}` });
+        const caso = JSON.parse(json);
+        if (caso && caso.id) casos.push(caso);
+      } catch(e) {
+        console.error('Error leyendo caso:', r.public_id, e.message);
+      }
     }
     casosClinicos = casos;
     console.log(`Cloudinary: ${casosClinicos.length} casos clínicos cargados`);

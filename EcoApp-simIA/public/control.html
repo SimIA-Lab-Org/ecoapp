@@ -462,6 +462,101 @@
       padding: 2px 8px; flex-shrink: 0; white-space: nowrap;
     }
 
+    /* ── BOTÓN OJITO ── */
+    .clip-btn-preview {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      padding: 0;
+    }
+    .clip-btn-preview:hover {
+      background: var(--teal-l);
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+
+    /* ── MODAL DE PREVISUALIZACIÓN ── */
+    #preview-modal {
+      display: none;
+      position: absolute;
+      z-index: 100;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+      /* tamaño por defecto (minimizado) */
+      width: 240px;
+      /* la altura se ajusta al ratio 4:3 del vídeo */
+      aspect-ratio: 4/3;
+      /* posición: esquina inferior izquierda de la silueta */
+      bottom: 12px;
+      left: 12px;
+      transition: width 0.25s cubic-bezier(.4,0,.2,1),
+                  height 0.25s cubic-bezier(.4,0,.2,1),
+                  bottom 0.25s cubic-bezier(.4,0,.2,1),
+                  left 0.25s cubic-bezier(.4,0,.2,1),
+                  border-radius 0.2s;
+    }
+    #preview-modal.visible { display: block; }
+    #preview-modal.maximizado {
+      width: calc(100% - 24px);
+      bottom: 12px;
+      left: 12px;
+      border-radius: 18px;
+    }
+
+    #preview-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Barra de controles flotante encima del vídeo */
+    .preview-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 8px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%);
+    }
+    .preview-bar-titulo {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .preview-icon-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      padding: 0;
+    }
+    .preview-icon-btn:hover { background: rgba(255,255,255,0.3); }
+
     /* Indicadores sobre los probes */
     .probe-indicator {
       position: absolute;
@@ -593,6 +688,30 @@
         <button class="probe" style="left:66%;top:80%" data-zona="venas-i" title="Venas MMII izquierdo">
           <img src="/images/icono-miembros-inferiores.png" alt="Venas">
         </button>
+
+        <!-- Modal de previsualización -->
+        <div id="preview-modal">
+          <video id="preview-video" autoplay loop muted playsinline></video>
+          <div class="preview-bar">
+            <span class="preview-bar-titulo" id="preview-titulo"></span>
+            <button class="preview-icon-btn" id="preview-btn-toggle" title="Maximizar">
+              <!-- ícono maximize; se cambia dinámicamente con JS -->
+              <svg id="preview-icon-max" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+              <svg id="preview-icon-min" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+                <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+              </svg>
+            </button>
+            <button class="preview-icon-btn" id="preview-btn-cerrar" title="Cerrar">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <!-- Desplegable de clips: se reposiciona y repuebla con JS -->
         <div class="probe-dropdown" id="probe-dropdown">

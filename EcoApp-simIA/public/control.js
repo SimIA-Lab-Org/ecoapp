@@ -41,6 +41,51 @@ const btnDetener     = document.getElementById('btn-detener');
 const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
 const ICONO_PLAY  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4l13 8-13 8V4z"/></svg>';
 
+// ── Preview modal ────────────────────────────────────────────────────
+const previewModal     = document.getElementById('preview-modal');
+const previewVideo     = document.getElementById('preview-video');
+const previewTitulo    = document.getElementById('preview-titulo');
+const previewBtnToggle = document.getElementById('preview-btn-toggle');
+const previewBtnCerrar = document.getElementById('preview-btn-cerrar');
+const previewIconMax   = document.getElementById('preview-icon-max');
+const previewIconMin   = document.getElementById('preview-icon-min');
+let   previewMaximizado = false;
+
+function abrirPreview(clip, datos) {
+  previewTitulo.textContent = datos.titulo + ' · ' + clip.nombre;
+  previewVideo.src = clip.archivo;
+  previewVideo.play().catch(() => {});
+  previewModal.classList.add('visible');
+  previewMaximizado = false;
+  previewModal.classList.remove('maximizado');
+  previewIconMax.style.display = '';
+  previewIconMin.style.display = 'none';
+  previewBtnToggle.title = 'Maximizar';
+}
+
+function cerrarPreview() {
+  previewModal.classList.remove('visible', 'maximizado');
+  previewVideo.pause();
+  previewVideo.src = '';
+  previewMaximizado = false;
+  previewIconMax.style.display = '';
+  previewIconMin.style.display = 'none';
+}
+
+previewBtnToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  previewMaximizado = !previewMaximizado;
+  previewModal.classList.toggle('maximizado', previewMaximizado);
+  previewIconMax.style.display = previewMaximizado ? 'none' : '';
+  previewIconMin.style.display = previewMaximizado ? ''     : 'none';
+  previewBtnToggle.title = previewMaximizado ? 'Minimizar' : 'Maximizar';
+});
+
+previewBtnCerrar.addEventListener('click', (e) => {
+  e.stopPropagation();
+  cerrarPreview();
+});
+
 // Mostrar el código de sesión en la esquina de la silueta, por si se olvida copiar
 document.getElementById('sala-badge-codigo').textContent = sala;
 
@@ -321,6 +366,8 @@ function renderDropdownClips(datos) {
     const card = document.createElement('div');
     card.className = 'clip-card' + (esActivo ? ' emitiendo' : '');
 
+    const SVG_OJO = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+
     card.innerHTML = `
       <div class="clip-info">
         <div class="clip-nombre">${clip.nombre}</div>
@@ -329,10 +376,16 @@ function renderDropdownClips(datos) {
       <span class="clip-badge ${clip.patologico ? 'badge-p' : 'badge-n'}">
         ${clip.patologico ? 'Patológico' : 'Normal'}
       </span>
+      <button class="clip-btn-preview" title="Previsualizar">${SVG_OJO}</button>
       <button class="clip-btn ${esActivo ? 'on' : ''}">
         ${esActivo ? 'Emitiendo' : 'Emitir'}
       </button>
     `;
+
+    card.querySelector('.clip-btn-preview').addEventListener('click', (e) => {
+      e.stopPropagation();
+      abrirPreview(clip, datos);
+    });
 
     card.querySelector('.clip-btn').addEventListener('click', (e) => {
       e.stopPropagation();

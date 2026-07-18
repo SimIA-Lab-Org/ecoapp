@@ -38,7 +38,12 @@ async function cargarCasosClinicos() {
         // Descargar el JSON usando autenticación Basic (los raw pueden ser privados)
         const json = await httpGet(r.secure_url, { Authorization: `Basic ${auth}` });
         const caso = JSON.parse(json);
-        if (caso && caso.id) casos.push(caso);
+        if (caso && caso.id) {
+          // Guardamos el public_id REAL de Cloudinary (incluye la extensión .json).
+          // Es lo que necesitamos para poder borrarlo luego sin fallar.
+          caso._publicId = r.public_id;
+          casos.push(caso);
+        }
       } catch(e) {
         console.error('Error leyendo caso:', r.public_id, e.message);
       }
@@ -355,7 +360,7 @@ function cloudinaryDestroy(publicId) {
 
 // ── API: listar casos clínicos ─────────────────────────────────────
 app.get('/api/admin/casos', (req, res) => {
-  res.json(casosClinicos);
+  res.json(casosClinicos.map(({ _publicId, ...c }) => c));
 });
 
 // ── API: crear o actualizar caso clínico ───────────────────────────
@@ -417,10 +422,12 @@ app.post('/api/admin/casos', async (req, res) => {
       r.end();
     });
 
-    // Actualizar memoria
+    // Actualizar memoria. Guardamos también el public_id real de Cloudinary
+    // (con extensión .json) para poder borrarlo después de forma fiable.
+    const caso_mem = { ...caso, _publicId: `${publicId}.json` };
     const idx = casosClinicos.findIndex(c => c.id === casoId);
-    if (idx !== -1) casosClinicos[idx] = caso;
-    else casosClinicos.push(caso);
+    if (idx !== -1) casosClinicos[idx] = caso_mem;
+    else casosClinicos.push(caso_mem);
 
     res.json({ ok: true, id: casoId });
   } catch(e) {
@@ -436,7 +443,12 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
   }
   try {
     const casoId  = req.params.casoId;
-    const publicId = `ecoapp-casos/${casoId}`;
+    // Buscamos el caso en memoria para usar su public_id REAL de Cloudinary.
+    // Los recursos raw se guardan CON extensión (ecoapp-casos/caso-123.json),
+    // así que borrar por "ecoapp-casos/caso-123" (sin .json) devolvería
+    // "not found" y el archivo seguiría ahí, reapareciendo al reiniciar.
+    const casoMem  = casosClinicos.find(c => c.id === casoId);
+    const publicId = (casoMem && casoMem._publicId) || `ecoapp-casos/${casoId}.json`;
     const crypto   = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000);
     const toSign   = `public_id=${publicId}&resource_type=raw&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
@@ -457,16 +469,32 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
       }
     };
 
-    await new Promise((resolve, reject) => {
+    const respuesta = await new Promise((resolve, reject) => {
       const r = https.request(reqOpts, resp => {
         let body = '';
         resp.on('data', c => body += c);
-        resp.on('end', () => resolve(JSON.parse(body)));
+        resp.on('end', () => {
+          try { resolve(JSON.parse(body)); }
+          catch(e) { reject(new Error('Respuesta inválida de Cloudinary: ' + body)); }
+        });
       });
       r.on('error', reject);
       r.write(postData);
       r.end();
     });
+
+    // Cloudinary devuelve { result: "ok" } si lo borró, o { result: "not found" }
+    // si el archivo ya no existía. Ambos casos son válidos para limpiar la memoria.
+    // Cualquier otra respuesta es un fallo real: NO tocamos la memoria y avisamos,
+    // porque si no el caso reaparecería al reiniciar el servidor.
+    const resultado = respuesta && respuesta.result;
+    if (resultado !== 'ok' && resultado !== 'not found') {
+      console.error('Cloudinary no borró el caso:', casoId, JSON.stringify(respuesta));
+      return res.status(500).json({
+        ok: false,
+        error: 'Cloudinary no pudo borrar el caso (' + (resultado || 'sin respuesta') + ')'
+      });
+    }
 
     casosClinicos = casosClinicos.filter(c => c.id !== casoId);
     res.json({ ok: true });
@@ -477,7 +505,7 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
 
 // ── API: casos clínicos para el panel de control ───────────────────
 app.get('/api/casos', (req, res) => {
-  res.json(casosClinicos);
+  res.json(casosClinicos.map(({ _publicId, ...c }) => c));
 });
 
 // ── API: verificar contraseña de admin ────────────────────────────

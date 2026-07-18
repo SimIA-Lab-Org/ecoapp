@@ -350,7 +350,16 @@ function cloudinaryDestroy(publicId) {
     const req = https.request(reqOpts, r => {
       let body = '';
       r.on('data', c => body += c);
-      r.on('end', () => resolve(JSON.parse(body)));
+      r.on('end', () => {
+        let json;
+        try { json = JSON.parse(body); }
+        catch(e) { return reject(new Error('Respuesta inválida de Cloudinary: ' + body)); }
+        // Cloudinary devuelve { result: "ok" } si lo borró, o "not found"
+        // si el archivo ya no existía. Cualquier otra cosa es un fallo real:
+        // rechazamos para NO limpiar la memoria y evitar que reaparezca al reiniciar.
+        if (json.result === 'ok' || json.result === 'not found') resolve(json);
+        else reject(new Error('Cloudinary no borró el vídeo (' + (json.result || (json.error && json.error.message) || 'sin respuesta') + ')'));
+      });
     });
     req.on('error', reject);
     req.write(postData);

@@ -168,6 +168,10 @@ app.post('/api/admin/registrar', (req, res) => {
   if (!public_id || !secure_url || !zona) {
     return res.status(400).json({ ok: false, error: 'Faltan datos' });
   }
+  // Solo se admiten vídeos .mp4
+  if (!/\.mp4($|\?)/i.test(secure_url)) {
+    return res.status(400).json({ ok: false, error: 'Solo se permiten vídeos en formato .mp4' });
+  }
   // Evitar duplicados
   if (!clipsCloudinary.find(c => c.id === public_id)) {
     clipsCloudinary.push({

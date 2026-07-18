@@ -244,6 +244,35 @@
       margin-bottom: 12px;
     }
     .lista-header .card-titulo { margin-bottom: 0; }
+
+    /* ── Tarjeta desplegable (vídeos en la nube) ── */
+    .card-colapsable > .lista-header { margin-bottom: 0; }
+    .card-colapsable.abierta > .lista-header { margin-bottom: 12px; }
+    .colapsable-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+    .colapsable-toggle .chevron {
+      color: var(--muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .card-colapsable.abierta .colapsable-toggle .chevron { transform: rotate(90deg); }
+    .colapsable-body { display: none; }
+    .card-colapsable.abierta .colapsable-body { display: block; }
+    .colapsable-contador {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 2px 9px;
+      margin-left: 2px;
+    }
     .btn-refrescar {
       font-size: 12px;
       color: var(--muted);
@@ -615,80 +644,6 @@
 
   <div class="contenido">
 
-    <!-- Formulario de subida -->
-    <div class="card">
-      <div class="card-titulo">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Subir nuevo vídeo
-      </div>
-
-      <div class="campo">
-        <label>Zona anatómica</label>
-        <select id="sel-zona">
-          <option value="">Cargando zonas...</option>
-        </select>
-      </div>
-
-      <div class="campo">
-        <label>Nombre del clip</label>
-        <input type="text" id="inp-nombre" placeholder="Ej: Derrame pleural moderado">
-      </div>
-
-      <div class="campo">
-        <label>Descripción breve (opcional)</label>
-        <input type="text" id="inp-sub" placeholder="Ej: Vista paraesternal larga">
-      </div>
-
-      <div class="toggle-row">
-        <div class="toggle-label">
-          Clip patológico
-          <small>Activa si el vídeo muestra una patología</small>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="chk-patologico">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-
-      <div class="drop-zone" id="drop-zone">
-        <input type="file" id="inp-archivo" accept="video/*">
-        <div class="drop-zona-icon">
-          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        </div>
-        <p><strong>Toca para seleccionar el vídeo</strong><br>o arrastra el archivo aquí</p>
-        <p class="archivo-seleccionado" id="archivo-nombre"></p>
-      </div>
-
-      <div class="progreso-wrap" id="progreso-wrap">
-        <div class="progreso-bar-bg">
-          <div class="progreso-bar" id="progreso-bar"></div>
-        </div>
-        <p class="progreso-texto" id="progreso-texto">Subiendo...</p>
-      </div>
-
-      <button class="btn-subir" id="btn-subir" disabled>
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Subir vídeo
-      </button>
-
-      <div class="resultado" id="resultado"></div>
-    </div>
-
-    <!-- Listado de vídeos subidos -->
-    <div class="card">
-      <div class="lista-header">
-        <div class="card-titulo">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          Vídeos en la nube
-        </div>
-        <button class="btn-refrescar" id="btn-refrescar">
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-          Actualizar
-        </button>
-      </div>
-      <div id="lista-clips"></div>
-    </div>
-
     <!-- Casos clínicos -->
     <div class="card">
       <div class="card-titulo">
@@ -728,6 +683,86 @@
             <button class="btn-guardar" id="btn-guardar-caso">Guardar caso</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Formulario de subida -->
+    <div class="card">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir nuevo vídeo
+      </div>
+
+      <div class="campo">
+        <label>Zona anatómica</label>
+        <select id="sel-zona">
+          <option value="">Cargando zonas...</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Nombre del clip</label>
+        <input type="text" id="inp-nombre" placeholder="Ej: Derrame pleural moderado">
+      </div>
+
+      <div class="campo">
+        <label>Descripción breve (opcional)</label>
+        <input type="text" id="inp-sub" placeholder="Ej: Vista paraesternal larga">
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Clip patológico
+          <small>Activa si el vídeo muestra una patología</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-patologico">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="inp-archivo" accept="video/mp4,.mp4">
+        <div class="drop-zona-icon">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <p><strong>Toca para seleccionar el vídeo</strong><br>o arrastra el archivo aquí · solo <strong>.mp4</strong></p>
+        <p class="archivo-seleccionado" id="archivo-nombre"></p>
+      </div>
+
+      <div class="progreso-wrap" id="progreso-wrap">
+        <div class="progreso-bar-bg">
+          <div class="progreso-bar" id="progreso-bar"></div>
+        </div>
+        <p class="progreso-texto" id="progreso-texto">Subiendo...</p>
+      </div>
+
+      <button class="btn-subir" id="btn-subir" disabled>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir vídeo
+      </button>
+
+      <div class="resultado" id="resultado"></div>
+    </div>
+
+    <!-- Listado de vídeos subidos (desplegable) -->
+    <div class="card card-colapsable" id="card-videos">
+      <div class="lista-header">
+        <div class="colapsable-toggle" id="videos-toggle">
+          <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <div class="card-titulo">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Vídeos en la nube
+          </div>
+          <span class="colapsable-contador" id="videos-contador"></span>
+        </div>
+        <button class="btn-refrescar" id="btn-refrescar">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Actualizar
+        </button>
+      </div>
+      <div class="colapsable-body">
+        <div id="lista-clips"></div>
       </div>
     </div>
 
@@ -830,9 +865,25 @@
       btnSubir.disabled = !zona || !nombre || !archivoSeleccionado;
     }
 
+    // ── Validar que el archivo sea .mp4 ───────────────────────────
+    function esMp4(f) {
+      if (!f) return false;
+      const nombreOk = /\.mp4$/i.test(f.name);
+      const tipoOk   = f.type === '' || f.type === 'video/mp4';
+      return nombreOk && tipoOk;
+    }
+
     inpArchivo.addEventListener('change', () => {
       const f = inpArchivo.files[0];
       if (!f) return;
+      if (!esMp4(f)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        inpArchivo.value = '';
+        archivoSeleccionado = null;
+        archivoNombre.textContent = '';
+        actualizarEstadoBtn();
+        return;
+      }
       archivoSeleccionado = f;
       archivoNombre.textContent = f.name;
       actualizarEstadoBtn();
@@ -844,11 +895,14 @@
       e.preventDefault();
       dropZone.classList.remove('drag-over');
       const f = e.dataTransfer.files[0];
-      if (f && f.type.startsWith('video/')) {
-        archivoSeleccionado = f;
-        archivoNombre.textContent = f.name;
-        actualizarEstadoBtn();
+      if (!f) return;
+      if (!esMp4(f)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        return;
       }
+      archivoSeleccionado = f;
+      archivoNombre.textContent = f.name;
+      actualizarEstadoBtn();
     });
 
     document.getElementById('sel-zona').addEventListener('change', actualizarEstadoBtn);
@@ -865,6 +919,11 @@
       const resultado  = document.getElementById('resultado');
 
       if (!zona || !nombre || !archivoSeleccionado) return;
+
+      if (!esMp4(archivoSeleccionado)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        return;
+      }
 
       btnSubir.disabled = true;
       btnSubir.innerHTML = '<span class="spinner"></span> Preparando...';
@@ -982,6 +1041,9 @@
             cloudClips.push({ ...c, zona_id: z.zona, zona_titulo: z.titulo });
           });
         });
+
+        const contadorEl = document.getElementById('videos-contador');
+        if (contadorEl) contadorEl.textContent = cloudClips.length;
 
         if (cloudClips.length === 0) {
           lista.innerHTML = '<div class="lista-vacia">Aún no hay vídeos subidos a la nube.<br>Usa el formulario de arriba para añadir el primero.</div>';
@@ -1395,6 +1457,11 @@
       }
     }
 
+
+    // ── Desplegable de vídeos en la nube ──────────────────────────
+    document.getElementById('videos-toggle').addEventListener('click', () => {
+      document.getElementById('card-videos').classList.toggle('abierta');
+    });
 
     // ── Arrancar ───────────────────────────────────────────────────
     cargarZonas();

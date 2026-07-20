@@ -11,6 +11,8 @@ let catalogoZonas  = [];   // datos del JSON
 let zonaActiva     = null; // zona seleccionada ahora
 let clipEmitiendo  = null; // clip que se está emitiendo
 let zonaEmitiendo  = null; // zona cuyo probe debe colorearse (verde/rojo)
+let ultimoClip     = null; // último clip emitido (para poder reanudar tras detener)
+let ultimosDatos   = null; // datos de zona del último clip (para reanudar)
 let congelado      = false;
 let filtroActivo   = null; // nombre del clip preseleccionado, o null = todos
 let casoActivo     = null; // caso clínico activo, o null
@@ -40,6 +42,7 @@ const btnDetener     = document.getElementById('btn-detener');
 
 const ICONO_PAUSA = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
 const ICONO_PLAY  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 4l13 8-13 8V4z"/></svg>';
+const ICONO_STOP  = '<svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
 
 // ── Preview modal ────────────────────────────────────────────────────
 const previewModal     = document.getElementById('preview-modal');
@@ -406,7 +409,13 @@ function emitirClip(clip, datos) {
 
   clipEmitiendo = clip;
   zonaEmitiendo = datos.zona;
+  ultimoClip    = clip;   // guardamos para poder reanudar tras detener
+  ultimosDatos  = datos;
   actualizarColorProbes();
+
+  // El botón vuelve a su estado "Detener" (por si venía de "Reanudar")
+  btnDetener.innerHTML = ICONO_STOP + 'Detener';
+  btnDetener.classList.add('detener');
 
   // Al emitir un nuevo clip, se desactivan congelado y pantalla negra
   congelado = false;
@@ -418,11 +427,11 @@ function emitirClip(clip, datos) {
   // el alumno no pueda ver el diagnóstico y tenga que interpretarlo él mismo.
   socket.emit('cambiar-clip', { archivo: clip.archivo, zona: datos.titulo });
 
-  // Now playing
+  // Emitir
   nowPlayingTit.textContent = `${datos.titulo} · ${clip.nombre}`;
   nowPlaying.classList.add('visible');
 
-  // Timer
+  // Temporizador
   segundos = 0;
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
@@ -449,7 +458,10 @@ function actualizarColorProbes() {
   }
 }
 
-// ── Detener ────────────────────────────────────────────────────────
+// ── Detener / Reanudar ─────────────────────────────────────────────
+// detener() ejecuta la parada real. El botón alterna entre "Detener"
+// (cuando hay algo emitiéndose) y "Reanudar" (cuando está parado pero
+// recordamos el último clip para volver a ponerlo).
 function detener() {
   clipEmitiendo = null;
   zonaEmitiendo = null;
@@ -459,11 +471,27 @@ function detener() {
   clearInterval(timerInterval);
   timerEl.textContent = '00:00';
 
+  // El botón pasa a "Reanudar" solo si hay un clip guardado que retomar
+  if (ultimoClip) {
+    btnDetener.innerHTML = ICONO_PLAY + 'Reanudar';
+    btnDetener.classList.remove('detener');
+  }
+
   const datos = catalogoZonas.find(z => z.zona === zonaActiva);
   if (datos) renderDropdownClips(datos);
 }
 
-btnDetener.addEventListener('click', detener);
+function reanudar() {
+  if (!ultimoClip || !ultimosDatos) return;
+  // Volvemos a emitir el último clip. emitirClip ya deja el botón en "Detener".
+  emitirClip(ultimoClip, ultimosDatos);
+}
+
+btnDetener.addEventListener('click', () => {
+  // Si está parado y hay algo que retomar → reanudar; si no → detener
+  if (!clipEmitiendo && ultimoClip) reanudar();
+  else                              detener();
+});
 
 // ── Congelar ───────────────────────────────────────────────────────
 btnCongelar.addEventListener('click', () => {

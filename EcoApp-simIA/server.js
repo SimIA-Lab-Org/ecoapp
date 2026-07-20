@@ -460,7 +460,7 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
     const publicId = (casoMem && casoMem._publicId) || `ecoapp-casos/${casoId}.json`;
     const crypto   = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000);
-    // OJO: Cloudinary NO firma 'resource_type' (va en la URL, no en la firma).
+    // Cloudinary NO firma 'resource_type' (va en la URL, no en la firma).
     // Si se incluye aquí, la firma es inválida y el borrado falla en silencio.
     const toSign   = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
     const signature = crypto.createHash('sha1').update(toSign).digest('hex');

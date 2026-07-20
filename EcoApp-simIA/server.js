@@ -460,7 +460,9 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
     const publicId = (casoMem && casoMem._publicId) || `ecoapp-casos/${casoId}.json`;
     const crypto   = require('crypto');
     const timestamp = Math.floor(Date.now() / 1000);
-    const toSign   = `public_id=${publicId}&resource_type=raw&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+    // OJO: Cloudinary NO firma 'resource_type' (va en la URL, no en la firma).
+    // Si se incluye aquí, la firma es inválida y el borrado falla en silencio.
+    const toSign   = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
     const signature = crypto.createHash('sha1').update(toSign).digest('hex');
 
     const postData = new URLSearchParams({
@@ -499,9 +501,12 @@ app.delete('/api/admin/casos/:casoId', async (req, res) => {
     const resultado = respuesta && respuesta.result;
     if (resultado !== 'ok' && resultado !== 'not found') {
       console.error('Cloudinary no borró el caso:', casoId, JSON.stringify(respuesta));
+      const motivo = resultado
+        || (respuesta && respuesta.error && respuesta.error.message)
+        || 'sin respuesta';
       return res.status(500).json({
         ok: false,
-        error: 'Cloudinary no pudo borrar el caso (' + (resultado || 'sin respuesta') + ')'
+        error: 'Cloudinary no pudo borrar el caso (' + motivo + ')'
       });
     }
 

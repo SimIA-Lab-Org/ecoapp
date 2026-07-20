@@ -525,7 +525,7 @@ app.get('/api/casos', (req, res) => {
 // ── API: verificar contraseña de admin ────────────────────────────
 app.post('/api/admin/auth', (req, res) => {
   const { pwd } = req.body;
-  const PWD = process.env.ADMIN_PASSWORD || 'Simiatech0.';
+  const PWD = process.env.ADMIN_PASSWORD || 'Simialab2.0';
   if (pwd === PWD) {
     res.json({ ok: true });
   } else {

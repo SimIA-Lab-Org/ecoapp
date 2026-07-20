@@ -593,12 +593,32 @@
     }
     .zona-grupo { border-bottom: 0.5px solid var(--border); }
     .zona-grupo:last-child { border-bottom: none; }
+    /* Cabecera de zona (clicable) */
     .zona-grupo-titulo {
       font-size: 11px; font-weight: 600; color: var(--muted);
       text-transform: uppercase; letter-spacing: 0.04em;
-      padding: 8px 12px 4px;
+      padding: 9px 12px;
       background: var(--bg);
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
     }
+    .zona-grupo-titulo .zona-chevron {
+      color: var(--muted); flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .zona-grupo.abierta > .zona-grupo-titulo .zona-chevron { transform: rotate(90deg); }
+    .zona-grupo-titulo .zona-nombre { flex: 1; }
+    .zona-grupo-titulo .zona-contador {
+      font-size: 10px; font-weight: 700;
+      color: #6b4fa8; background: #efeaf7;
+      border-radius: 20px; padding: 1px 8px;
+      letter-spacing: 0; text-transform: none;
+      display: none;   /* solo se muestra si hay clips marcados */
+    }
+    .zona-grupo-titulo .zona-contador.tiene { display: inline-block; }
+    /* Cuerpo plegable */
+    .zona-grupo-clips { display: none; }
+    .zona-grupo.abierta > .zona-grupo-clips { display: block; }
     .clip-check-row {
       display: flex; align-items: center; gap: 8px;
       padding: 7px 12px;
@@ -1298,23 +1318,8 @@
               selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Cargando...</div>';
               try {
                 const zonas = await fetch('/api/clips').then(r => r.json());
-                selector.innerHTML = '';
                 const idsActuales = new Set(caso.clips.map(c => c.id));
-                zonas.forEach(z => {
-                  if (!z.clips || z.clips.length === 0) return;
-                  const grupo = document.createElement('div');
-                  grupo.className = 'zona-grupo';
-                  grupo.innerHTML = '<div class="zona-grupo-titulo">' + z.titulo + '</div>' +
-                    z.clips.map(c => {
-                      const marcado = idsActuales.has(c.id) ? 'checked' : '';
-                      return '<label class="clip-check-row">' +
-                        '<input type="checkbox" ' + marcado + ' data-id="' + c.id + '" data-zona="' + z.zona + '" data-zona-titulo="' + z.titulo + '" data-nombre="' + c.nombre + '" data-archivo="' + c.archivo + '" data-patologico="' + c.patologico + '" data-sub="' + (c.sub||'') + '">' +
-                        '<span class="clip-check-nombre">' + c.nombre + '</span>' +
-                        '<span class="clip-check-badge ' + (c.patologico ? 'badge-p' : 'badge-n') + '">' + (c.patologico ? 'Patológico' : 'Normal') + '</span>' +
-                        '</label>';
-                    }).join('');
-                  selector.appendChild(grupo);
-                });
+                construirAcordeonClips(selector, zonas, idsActuales);
               } catch(e) {
                 selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Error cargando clips.</div>';
               }
@@ -1368,25 +1373,74 @@
     }
 
     // ── Poblar selector de clips para nuevo caso ──────────────────
+    // ── Acordeón de clips (compartido: crear y editar) ────────────
+    // Construye el HTML de un acordeón por zonas dentro de `selector`.
+    // idsMarcados: Set con los ids de clips que deben salir marcados.
+    function construirAcordeonClips(selector, zonas, idsMarcados) {
+      idsMarcados = idsMarcados || new Set();
+      selector.innerHTML = '';
+      let hayZonas = false;
+      zonas.forEach(z => {
+        if (!z.clips || z.clips.length === 0) return;
+        hayZonas = true;
+        const grupo = document.createElement('div');
+        grupo.className = 'zona-grupo';
+
+        const chevron = '<svg class="zona-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+        const filas = z.clips.map(c => {
+          const marcado = idsMarcados.has(c.id) ? 'checked' : '';
+          return '<label class="clip-check-row">' +
+            '<input type="checkbox" ' + marcado + ' data-id="' + c.id + '" data-zona="' + z.zona + '" data-zona-titulo="' + z.titulo + '" data-nombre="' + c.nombre + '" data-archivo="' + c.archivo + '" data-patologico="' + c.patologico + '" data-sub="' + (c.sub || '') + '">' +
+            '<span class="clip-check-nombre">' + c.nombre + '</span>' +
+            '<span class="clip-check-badge ' + (c.patologico ? 'badge-p' : 'badge-n') + '">' + (c.patologico ? 'Patológico' : 'Normal') + '</span>' +
+            '</label>';
+        }).join('');
+
+        grupo.innerHTML =
+          '<div class="zona-grupo-titulo">' +
+            chevron +
+            '<span class="zona-nombre">' + z.titulo + '</span>' +
+            '<span class="zona-contador">0</span>' +
+          '</div>' +
+          '<div class="zona-grupo-clips">' + filas + '</div>';
+
+        // Abrir/cerrar al pulsar la cabecera
+        grupo.querySelector('.zona-grupo-titulo').addEventListener('click', () => {
+          grupo.classList.toggle('abierta');
+        });
+
+        // Actualizar contador de la zona al marcar/desmarcar
+        grupo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', () => actualizarContadorZona(grupo));
+        });
+
+        selector.appendChild(grupo);
+        actualizarContadorZona(grupo);   // por si vienen ya marcados (editar)
+        // Si la zona trae algún clip ya marcado (modo editar), la abrimos
+        if (grupo.querySelector('input[type="checkbox"]:checked')) {
+          grupo.classList.add('abierta');
+        }
+      });
+
+      if (!hayZonas) {
+        selector.innerHTML = '<div class="lista-vacia" style="padding:10px">No hay vídeos disponibles todavía. Sube alguno desde el formulario de abajo.</div>';
+      }
+    }
+
+    function actualizarContadorZona(grupo) {
+      const marcados = grupo.querySelectorAll('input[type="checkbox"]:checked').length;
+      const cont = grupo.querySelector('.zona-contador');
+      cont.textContent = marcados;
+      cont.classList.toggle('tiene', marcados > 0);
+    }
+
     async function poblarSelectorClips() {
       const selector = document.getElementById('clips-selector');
       selector.innerHTML = '<div class="lista-vacia">Cargando clips...</div>';
       try {
         const zonas = await fetch('/api/clips').then(r => r.json());
-        selector.innerHTML = '';
-        zonas.forEach(z => {
-          if (!z.clips || z.clips.length === 0) return;
-          const grupo = document.createElement('div');
-          grupo.className = 'zona-grupo';
-          grupo.innerHTML = `<div class="zona-grupo-titulo">${z.titulo}</div>` +
-            z.clips.map(c => `
-              <label class="clip-check-row">
-                <input type="checkbox" data-id="${c.id}" data-zona="${z.zona}" data-zona-titulo="${z.titulo}" data-nombre="${c.nombre}" data-archivo="${c.archivo}" data-patologico="${c.patologico}" data-sub="${c.sub || ''}">
-                <span class="clip-check-nombre">${c.nombre}</span>
-                <span class="clip-check-badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
-              </label>`).join('');
-          selector.appendChild(grupo);
-        });
+        construirAcordeonClips(selector, zonas, new Set());
       } catch (e) {
         selector.innerHTML = '<div class="lista-vacia">Error cargando clips.</div>';
       }
@@ -1428,7 +1482,7 @@
           msg.className = 'edit-msg ok';
           document.getElementById('caso-nombre').value = '';
           document.getElementById('caso-desc').value = '';
-          document.querySelectorAll('#clips-selector input[type="checkbox"]').forEach(cb => cb.checked = false);
+          poblarSelectorClips();   // reinicia checkboxes, contadores y acordeón
           setTimeout(() => {
             document.getElementById('tab-lista-btn').click();
             cargarListaCasos();

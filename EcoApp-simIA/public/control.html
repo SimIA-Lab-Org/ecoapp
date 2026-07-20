@@ -37,7 +37,8 @@
     body {
       font-family: var(--font);
       background: var(--bg);
-      height: 100vh;
+      height: 100vh;         /* fallback para navegadores antiguos */
+      height: 100dvh;        /* altura real visible en tablet/móvil (descuenta barras) */
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -48,6 +49,7 @@
       flex-direction: column;
       height: 100%;
       width: 100%;
+      min-height: 0;
       overflow: hidden;
     }
 
@@ -76,6 +78,7 @@
     /* ── MAIN: silueta grande y centrada ── */
     .main {
       flex: 1;
+      min-height: 0;   /* deja que la silueta se encoja en vez de empujar el footer fuera */
       display: flex;
       align-items: center;
       justify-content: center;

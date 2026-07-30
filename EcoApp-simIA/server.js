@@ -609,6 +609,16 @@ io.on('connection', (socket) => {
     io.to(salaId).emit('pantalla-negra', valor);
   });
 
+  // El instructor cierra la sesión deliberadamente → avisar a los demás
+  // roles de la sala (p.ej. al monitor de eco) para que también salgan.
+  // Se usa un evento explícito (y no el disconnect) para que un simple
+  // refresco de página del control NO eche al alumno sin querer.
+  socket.on('cerrar-sesion', () => {
+    const salaId = socket.data.sala;
+    if (!salaId || !salas[salaId]) return;
+    socket.to(salaId).emit('sesion-cerrada');
+  });
+
   socket.on('disconnect', () => {
     const salaId = socket.data.sala;
     const rol    = socket.data.rol;

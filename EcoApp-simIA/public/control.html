@@ -66,6 +66,8 @@
       font-size: 13px; color: var(--muted);
       text-decoration: none; padding: 4px 8px;
       border-radius: 6px; transition: background 0.1s;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit;
     }
     .header-back:hover { background: var(--bg); }
     .header-title { font-size: 14px; font-weight: 600; flex: 1; }
@@ -586,7 +588,7 @@
   <div class="app-contenido">
 
   <header class="header">
-    <a href="/" class="header-back">← Inicio</a>
+    <button type="button" class="header-back" id="btn-salir">← Salir</button>
     <span class="header-title">Panel de control</span>
     <div class="header-right">
       <div class="conn-status">

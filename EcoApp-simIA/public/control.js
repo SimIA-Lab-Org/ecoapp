@@ -529,5 +529,20 @@ socket.on('companero-estado', (datos) => {
   }
 });
 
+// ── Salir / cerrar sesión ──────────────────────────────────────────
+// Al salir el instructor, avisamos al servidor para que cierre también
+// el monitor de eco del alumno, y volvemos al selector de monitor de la
+// misma sala (no al lobby inicial) para poder reentrar sin reescribir el
+// código.
+const btnSalir = document.getElementById('btn-salir');
+if (btnSalir) {
+  btnSalir.addEventListener('click', () => {
+    const seguro = confirm('¿Salir de la sesión? Se cerrará también la pantalla del alumno.');
+    if (!seguro) return;
+    socket.emit('cerrar-sesion');
+    window.location.href = '/?sala=' + encodeURIComponent(sala);
+  });
+}
+
 // ── Arrancar ───────────────────────────────────────────────────────
 cargarCatalogo();

@@ -11,8 +11,8 @@ function crearTransporte(sala, rol) {
 
   socket.on('unirse-resultado', (res) => {
     if (!res.ok) {
-      alert('Ese rol ya está ocupado en esta sala. Volviendo al inicio.');
-      window.location.href = '/';
+      alert('Ese monitor ya está ocupado en esta sala. Vuelve a elegir monitor.');
+      window.location.href = '/?sala=' + encodeURIComponent(sala);
     }
   });
 

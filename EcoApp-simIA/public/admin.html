@@ -676,9 +676,20 @@
         <button class="tab-btn" id="tab-nuevo-btn">+ Nuevo caso</button>
       </div>
 
-      <!-- Lista de casos -->
+      <!-- Lista de casos (desplegable, para no crecer en scroll infinito) -->
       <div class="tab-seccion visible" id="tab-lista">
-        <div id="lista-casos"><div class="lista-vacia">Cargando...</div></div>
+        <div class="card-colapsable" id="card-casos-lista">
+          <div class="lista-header">
+            <div class="colapsable-toggle" id="casos-toggle">
+              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <div class="card-titulo">Casos guardados</div>
+              <span class="colapsable-contador" id="casos-contador"></span>
+            </div>
+          </div>
+          <div class="colapsable-body">
+            <div id="lista-casos"><div class="lista-vacia">Cargando...</div></div>
+          </div>
+        </div>
       </div>
 
       <!-- Formulario nuevo caso -->
@@ -1239,9 +1250,11 @@
     // ── Cargar lista de casos ──────────────────────────────────────
     async function cargarListaCasos() {
       const lista = document.getElementById('lista-casos');
+      const contadorEl = document.getElementById('casos-contador');
       lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
       try {
         const casos = await fetch('/api/admin/casos').then(r => r.json());
+        if (contadorEl) contadorEl.textContent = casos.length + (casos.length === 1 ? ' caso' : ' casos');
         if (casos.length === 0) {
           lista.innerHTML = '<div class="lista-vacia">No hay casos clínicos guardados.<br>Usa la pestaña "+ Nuevo caso" para crear uno.</div>';
           return;
@@ -1485,6 +1498,7 @@
           poblarSelectorClips();   // reinicia checkboxes, contadores y acordeón
           setTimeout(() => {
             document.getElementById('tab-lista-btn').click();
+            document.getElementById('card-casos-lista').classList.add('abierta');
             cargarListaCasos();
             msg.textContent = '';
           }, 800);
@@ -1515,6 +1529,11 @@
     // ── Desplegable de vídeos en la nube ──────────────────────────
     document.getElementById('videos-toggle').addEventListener('click', () => {
       document.getElementById('card-videos').classList.toggle('abierta');
+    });
+
+    // ── Desplegable de casos clínicos guardados ───────────────────
+    document.getElementById('casos-toggle').addEventListener('click', () => {
+      document.getElementById('card-casos-lista').classList.toggle('abierta');
     });
 
     // ── Arrancar ───────────────────────────────────────────────────

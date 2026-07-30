@@ -375,9 +375,27 @@
     document.getElementById('rol-control').addEventListener('click', () => elegirRol('control'));
     document.getElementById('rol-eco').addEventListener('click', () => elegirRol('eco'));
 
-    document.getElementById('btn-volver-1').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
-    document.getElementById('btn-volver-2').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
-    document.getElementById('btn-volver-3').addEventListener('click', () => mostrarPantalla('pantalla-inicio'));
+    // Al volver al lobby, limpiamos ?sala de la URL para que un refresco
+    // no vuelva a saltar directo al selector de monitor.
+    function volverAlLobby() {
+      history.replaceState(null, '', location.pathname);
+      mostrarPantalla('pantalla-inicio');
+    }
+    document.getElementById('btn-volver-1').addEventListener('click', volverAlLobby);
+    document.getElementById('btn-volver-2').addEventListener('click', volverAlLobby);
+    document.getElementById('btn-volver-3').addEventListener('click', volverAlLobby);
+
+    // ── Entrada directa al selector de monitor ──────────────────────
+    // Si llegamos con ?sala=CODIGO (al salir de una sesión o al cerrarla
+    // el instructor), no dejamos al usuario en el lobby inicial: le
+    // mostramos directamente la pantalla de "Elige tu pantalla" de esa
+    // misma sala, para que pueda volver a entrar sin reescribir el código.
+    const salaInicial = limpiarCodigo(new URLSearchParams(location.search).get('sala') || '');
+    if (salaInicial) {
+      sala = salaInicial;
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    }
   </script>
 </body>
 </html>

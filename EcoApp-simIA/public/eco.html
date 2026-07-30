@@ -194,6 +194,12 @@
     // Pantalla negra
     socket.on('pantalla-negra', pantallaNegraActivar);
 
+    // El instructor ha cerrado la sesión → volver al selector de monitor
+    // de esta misma sala (no al lobby inicial).
+    socket.on('sesion-cerrada', () => {
+      window.location.href = '/?sala=' + encodeURIComponent(sala);
+    });
+
     function cargarClip(clip) {
       espera.style.display = 'none';
       video.src = clip.archivo;

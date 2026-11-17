@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoApp SimIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.1);
+      --text: #111;
+      --muted: #666;
+      --blue: #1a56a0;
+      --blue-l: #e8f0fb;
+      --teal: #0d6b53;
+      --teal-l: #e0f4ee;
+      --red: #a32020;
+      --red-l: #fbeaea;
+      --green: #1e6b2e;
+      --green-l: #e4f5e8;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 22px;
+      padding: 3rem 2.5rem;
+      width: 92%;
+      max-width: 460px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .btn-info {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-info:hover { background: var(--teal-l); color: var(--teal); }
+    .logo {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      color: var(--teal);
+      margin-bottom: 6px;
+    }
+    .sub { font-size: 14px; color: var(--muted); margin-bottom: 2.5rem; }
+
+    .btns { display: flex; flex-direction: column; gap: 14px; }
+    .btn {
+      display: flex; align-items: center; gap: 16px;
+      padding: 20px 22px;
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--bg);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      width: 100%;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--surface); border-color: rgba(0,0,0,0.2); }
+    .btn-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .btn-crear .btn-icon  { background: var(--blue-l); color: var(--blue); }
+    .btn-unirse .btn-icon { background: var(--teal-l); color: var(--teal); }
+    .btn-admin .btn-icon  { background: var(--blue-l); color: var(--blue); }
+    .btn-text strong { display: block; font-size: 16px; font-weight: 500; color: var(--text); }
+    .btn-text small  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .footer-logo {
+      margin-top: 2rem;
+      font-size: 12px;
+      color: #bbb;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+    }
+    .footer-credit {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #ccc;
+      letter-spacing: 0.03em;
+    }
+    .footer-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      margin: 12px auto 0;
+    }
+    .footer-brand-img {
+      display: block;
+      height: 18px;
+      width: auto;
+      opacity: 0.8;
+    }
+    .footer-brand-img.logo-isabial { height: 26px; }
+    .footer-logos-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+    }
+
+    /* ── Pantallas adicionales del Lobby ── */
+    .pantalla { display: none; }
+    .pantalla.visible { display: block; }
+
+    .codigo-grande {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: var(--teal);
+      margin: 1.2rem 0;
+    }
+    input.input-codigo {
+      width: 100%;
+      padding: 14px 16px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 18px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 14px;
+      font-family: inherit;
+    }
+    .btn-accion {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      background: var(--teal);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-volver {
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+    .sala-actual {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+    .sala-actual strong { color: var(--text); letter-spacing: 2px; }
+
+    .rol-btn {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 14px;
+      border: 0.5px solid var(--border);
+      background: var(--bg);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: inherit;
+    }
+    .rol-btn:hover:not(:disabled) { background: #e4e6e9; }
+    .rol-btn:disabled {
+      background: #f3f3f3;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .rol-btn .estado { font-size: 12px; }
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -3px;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a href="/acerca-de.html" class="btn-info" title="Acerca de">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.5" fill="currentColor" stroke="none"/></svg>
+    </a>
+
+    <!-- Pantalla 1: Lobby inicial -->
+    <div class="pantalla visible" id="pantalla-inicio">
+      <div class="logo">EcoApp</div>
+      <p class="sub">Simulador de ecografía</p>
+
+      <div class="btns">
+        <button class="btn btn-crear" id="btn-crear">
+          <div class="btn-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div class="btn-text">
+            <strong>Crear sesión activa</strong>
+            <small>Genera un código nuevo para empezar</small>
+          </div>
+        </button>
+        <button class="btn btn-unirse" id="btn-unirse">
+          <div class="btn-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.5 12.5L20 3M16 7l3 3M19 4l1 1"/></svg></div>
+          <div class="btn-text">
+            <strong>Unirse a sesión</strong>
+            <small>Introduce el código que te han dado</small>
+          </div>
+        </button>
+        <a class="btn btn-admin" href="/admin.html" style="text-decoration:none;">
+          <div class="btn-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="btn-text">
+            <strong>Gestión de contenido <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;opacity:0.5"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></strong>
+            <small>Vídeos, clips y casos clínicos</small>
+          </div>
+        </a>
+      </div>
+
+      <p class="footer-logo">Laboratorio de Simulación Clínica e Innovación de Alicante ISABIAL</p>
+      <p class="footer-credit">Desarrollado por Aitana Gil Morcillo</p>
+      <div class="footer-logos">
+        <img src="/images/logo-isabial.png" alt="ISABIAL" class="footer-brand-img logo-isabial">
+        <div class="footer-logos-divider"></div>
+        <img src="/images/logo-simia.png" alt="SimIA" class="footer-brand-img">
+        <div class="footer-logos-divider"></div>
+        <img src="/images/logo-ecocritic.png" alt="Ecocritic" class="footer-brand-img">
+      </div>
+    </div>
+
+    <!-- Pantalla 2a: código generado -->
+    <div class="pantalla" id="pantalla-codigo">
+      <div class="logo" style="font-size:22px;">Sesión creada</div>
+      <p class="sub">Comparte este código con el otro dispositivo</p>
+      <div class="codigo-grande" id="codigo-generado"></div>
+      <button class="btn-accion" id="btn-continuar-creada">Continuar</button>
+      <button class="btn-volver" id="btn-volver-1">← Volver</button>
+    </div>
+
+    <!-- Pantalla 2b: unirse con código -->
+    <div class="pantalla" id="pantalla-unirse">
+      <div class="logo" style="font-size:22px;">Unirse a sesión</div>
+      <p class="sub">Escribe el código de la sesión</p>
+      <input class="input-codigo" id="input-codigo" placeholder="ABCDE" maxlength="8">
+      <button class="btn-accion" id="btn-entrar">Entrar</button>
+      <button class="btn-volver" id="btn-volver-2">← Volver</button>
+    </div>
+
+    <!-- Pantalla 3: selección de rol -->
+    <div class="pantalla" id="pantalla-rol">
+      <div class="logo" style="font-size:22px;">Elige tu pantalla</div>
+      <p class="sala-actual">Sala: <strong id="sala-mostrada"></strong></p>
+
+      <button class="rol-btn" id="rol-control" disabled>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Monitor de Control</span>
+        <span class="estado" id="estado-control">comprobando...</span>
+      </button>
+      <button class="rol-btn" id="rol-eco" disabled>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>Monitor de Eco</span>
+        <span class="estado" id="estado-eco">comprobando...</span>
+      </button>
+      <button class="rol-btn" id="rol-entrenamiento" disabled>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1z"/><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2"/><polyline points="8.5 13 10.5 15 15.5 10"/></svg>Monitor de Evaluación</span>
+        <span class="estado" id="estado-entrenamiento">comprobando...</span>
+      </button>
+
+      <button class="btn-volver" id="btn-volver-3">← Volver al lobby</button>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let sala = null;
+    const socket = io();
+
+    function mostrarPantalla(id) {
+      document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('visible'));
+      document.getElementById(id).classList.add('visible');
+    }
+
+    function limpiarCodigo(texto) {
+      return texto.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+
+    function generarCodigo() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sin 0/O ni 1/I
+      let codigo = '';
+      for (let i = 0; i < 5; i++) codigo += chars[Math.floor(Math.random() * chars.length)];
+      return codigo;
+    }
+
+    // ── Comprobar disponibilidad de roles, preguntando al servidor ────
+    function comprobarRoles() {
+      document.getElementById('sala-mostrada').textContent = sala;
+
+      ['control', 'eco', 'entrenamiento'].forEach(rol => {
+        document.getElementById('estado-' + rol).textContent = 'comprobando...';
+        document.getElementById('rol-' + rol).disabled = true;
+      });
+
+      socket.emit('comprobar-sala', sala);
+    }
+
+    const ICONO_CANDADO = '<svg class="icon-inline" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+
+    socket.on('estado-sala', (datos) => {
+      ['control', 'eco', 'entrenamiento'].forEach(rol => {
+        const ocupado = !!datos[rol + 'Ocupado'];
+        document.getElementById('rol-' + rol).disabled = ocupado;
+        document.getElementById('estado-' + rol).innerHTML = ocupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
+      });
+    });
+
+    function elegirRol(rol) {
+      const destino = { control: '/control.html', eco: '/eco.html', entrenamiento: '/entrenamiento.html' }[rol];
+      window.location.href = `${destino}?sala=${encodeURIComponent(sala)}`;
+    }
+
+    // ── Navegación ──────────────────────────────────────────────────
+    document.getElementById('btn-crear').addEventListener('click', () => {
+      sala = generarCodigo();
+      document.getElementById('codigo-generado').textContent = sala;
+      mostrarPantalla('pantalla-codigo');
+    });
+
+    document.getElementById('btn-continuar-creada').addEventListener('click', () => {
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    });
+
+    document.getElementById('btn-unirse').addEventListener('click', () => {
+      mostrarPantalla('pantalla-unirse');
+    });
+
+    document.getElementById('btn-entrar').addEventListener('click', () => {
+      const codigo = limpiarCodigo(document.getElementById('input-codigo').value);
+      if (!codigo) return;
+      sala = codigo;
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    });
+
+    document.getElementById('rol-control').addEventListener('click', () => elegirRol('control'));
+    document.getElementById('rol-eco').addEventListener('click', () => elegirRol('eco'));
+    document.getElementById('rol-entrenamiento').addEventListener('click', () => elegirRol('entrenamiento'));
+
+    // Al volver al lobby, limpiamos ?sala de la URL para que un refresco
+    // no vuelva a saltar directo al selector de monitor.
+    function volverAlLobby() {
+      history.replaceState(null, '', location.pathname);
+      mostrarPantalla('pantalla-inicio');
+    }
+    document.getElementById('btn-volver-1').addEventListener('click', volverAlLobby);
+    document.getElementById('btn-volver-2').addEventListener('click', volverAlLobby);
+    document.getElementById('btn-volver-3').addEventListener('click', volverAlLobby);
+
+    // ── Entrada directa al selector de monitor ──────────────────────
+    // Si llegamos con ?sala=CODIGO (al salir de una sesión o al cerrarla
+    // el instructor), no dejamos al usuario en el lobby inicial: le
+    // mostramos directamente la pantalla de "Elige tu pantalla" de esa
+    // misma sala, para que pueda volver a entrar sin reescribir el código.
+    const salaInicial = limpiarCodigo(new URLSearchParams(location.search).get('sala') || '');
+    if (salaInicial) {
+      sala = salaInicial;
+      mostrarPantalla('pantalla-rol');
+      comprobarRoles();
+    }
+  </script>
+</body>
+</html>

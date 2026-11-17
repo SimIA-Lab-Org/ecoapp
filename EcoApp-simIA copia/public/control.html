@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Control · EcoApp SimIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f0f2f5;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.1);
+      --text:      #111;
+      --muted:     #666;
+      --blue:      #0d6b53;
+      --blue-l:    #e0f4ee;
+      --teal:      #0d6b53;
+      --teal-l:    #e0f4ee;
+      --red:       #a32020;
+      --red-l:     #fbeaea;
+      --green:     #1e6b2e;
+      --green-l:   #e4f5e8;
+      --amber:     #7a4800;
+      --amber-l:   #fef3e0;
+      --morado:    #6b4fa8;
+      --morado-l:  #f0eaf9;
+      --naranja:   #b05a00;
+      --naranja-l: #fff3e6;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      height: 100vh;         /* fallback para navegadores antiguos */
+      height: 100dvh;        /* altura real visible en tablet/móvil (descuenta barras) */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .app-contenido {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .header-back {
+      font-size: 13px; color: var(--muted);
+      text-decoration: none; padding: 4px 8px;
+      border-radius: 6px; transition: background 0.1s;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit;
+    }
+    .header-back:hover { background: var(--bg); }
+    .header-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .conn-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+    .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+    .conn-dot.on { background: #3aaa5e; }
+    .timer { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 34px; }
+
+    /* ── MAIN: silueta grande y centrada ── */
+    .main {
+      flex: 1;
+      min-height: 0;   /* deja que la silueta se encoja en vez de empujar el footer fuera */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 10px;
+    }
+
+    .silueta-panel {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 4px 28px rgba(0,0,0,0.06);
+      height: 100%;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .silueta-wrap {
+      position: relative;
+      height: 100%;
+      display: inline-block;
+    }
+
+    .silueta-wrap img {
+      height: 100%;
+      width: auto;
+      display: block;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* Código de sesión: */
+    .sala-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 8;
+      background: rgba(255,255,255,0.92);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 9px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+      line-height: 1.25;
+    }
+    .sala-badge-label {
+      display: block;
+      font-size: 7.5px;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .sala-badge-codigo {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--teal);
+    }
+
+    /* Botones sobre la silueta */
+    .probe {
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2.5px solid var(--teal);
+      background: white;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      padding: 0;
+      overflow: visible;
+      z-index: 5;
+    }
+    .probe:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    }
+    .probe.activo {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(26,86,160,0.2);
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    /* Estado de emisión: blanco → verde (normal) / rojo (patológico) */
+    .probe.emit-normal {
+      background: var(--green);
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(30,107,46,0.25), 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .probe.emit-patologico {
+      background: var(--red);
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(163,32,32,0.25), 0 2px 10px rgba(0,0,0,0.15);
+    }
+    .probe.emit-normal img,
+    .probe.emit-patologico img {
+      filter: brightness(0) invert(1);
+    }
+
+    .probe img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+
+    /* ── DESPLEGABLE DE CLIPS ── */
+    .probe-dropdown {
+      display: none;
+      position: absolute;
+      z-index: 30;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 10px 32px rgba(0,0,0,0.2);
+      overflow: hidden;
+      max-height: 340px;
+      flex-direction: column;
+    }
+    .probe-dropdown.visible { display: flex; }
+
+    .dropdown-header {
+      padding: 14px 16px 10px;
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .dropdown-header strong { display: block; font-size: 14px; font-weight: 600; color: var(--text); }
+    .dropdown-header span   { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .dropdown-clips {
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .clip-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .clip-card.emitiendo {
+      border: 1.5px solid var(--teal);
+      background: var(--teal-l);
+    }
+
+    .clip-info { flex: 1; min-width: 0; }
+    .clip-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .clip-sub    { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .clip-badge {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      font-weight: 500;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+    .badge-n { background: var(--green-l); color: var(--green); }
+    .badge-p { background: var(--red-l);   color: var(--red); }
+
+    .clip-btn {
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .clip-btn:hover { background: #e4e6e9; }
+    .clip-btn.on {
+      background: var(--teal);
+      color: white;
+      border-color: var(--teal);
+    }
+
+    /* ── NOW PLAYING ── */
+    .now-playing {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--teal-l);
+      border-radius: 10px;
+      font-size: 12px;
+      margin: 0 16px 10px;
+      flex-shrink: 0;
+    }
+    .now-playing.visible { display: flex; }
+    .now-playing-label { color: var(--teal); font-weight: 600; flex-shrink: 0; }
+    .now-playing-titulo { color: var(--text); flex: 1; font-size: 13px; }
+
+    /* ── FOOTER ACCIONES ── */
+    .footer {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .foot-btn {
+      flex: 1;
+      padding: 9px 8px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .foot-btn:hover { background: #e4e6e9; }
+    .foot-btn.congelado { background: var(--amber-l); color: var(--amber); border-color: #e8c870; }
+    .foot-btn.detener   { color: var(--red); }
+    .foot-btn.detener:hover { background: var(--red-l); }
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -2px;
+      margin-right: 5px;
+    }
+
+    /* ── FRANJA DE LOGOS INSTITUCIONALES ── */
+    .logos-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-top: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .logos-bar img {
+      display: block;
+      height: 16px;
+      width: auto;
+      opacity: 0.8;
+    }
+    .logos-bar img.logo-isabial { height: 23px; }
+    .logos-bar-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border);
+    }
+
+    /* ── FILTRO DE PRESELECCIÓN — badge compacto ── */
+    .filtro-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 8;
+      background: rgba(255,255,255,0.92);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 9px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      line-height: 1.25;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .filtro-badge:hover { border-color: var(--teal); }
+    .filtro-badge.activo.modo-filtro { border-color: var(--naranja); background: var(--naranja-l); }
+    .filtro-badge.activo.modo-caso   { border-color: var(--morado);  background: var(--morado-l); }
+    .filtro-badge-label {
+      display: block; font-size: 7.5px; color: var(--muted);
+      letter-spacing: 0.03em; text-transform: uppercase;
+    }
+    .filtro-badge-valor {
+      display: block; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.5px; color: var(--teal);
+    }
+    .filtro-badge.activo.modo-filtro .filtro-badge-valor { color: var(--naranja); }
+    .filtro-badge.activo.modo-caso   .filtro-badge-valor { color: var(--morado); }
+
+    /* Menú de chips */
+    .filtro-menu {
+      position: absolute;
+      top: 52px;
+      right: 6px;
+      z-index: 50;
+      background: rgba(255,255,255,0.97);
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+      padding: 10px;
+      width: 260px;
+      display: none;
+      backdrop-filter: blur(6px);
+    }
+    .filtro-menu.visible { display: block; }
+
+    .filtro-grupo-label {
+      font-size: 9px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 6px; margin-top: 2px;
+    }
+    .filtro-chips {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      margin-bottom: 10px;
+    }
+    .filtro-chips:last-child { margin-bottom: 0; }
+
+    .chip {
+      display: inline-flex; align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: all 0.12s;
+      font-family: var(--font);
+      white-space: nowrap;
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .chip:hover { background: #e4e6e9; }
+    .chip.caso         { border-color: var(--morado);  color: var(--morado);  background: var(--morado-l); }
+    .chip.caso.activo  { background: var(--morado);    color: white; }
+    .chip.rapido       { border-color: var(--border);  color: var(--text);    background: var(--bg); }
+    .chip.rapido.activo{ background: var(--naranja);   color: white; border-color: var(--naranja); }
+    .chip.todos        { border-color: var(--teal); color: var(--teal); background: var(--teal-l); }
+    .chip.todos.activo { background: var(--teal); color: white; border-color: var(--teal); }
+
+    .filtro-separador { height: 0.5px; background: var(--border); margin: 8px 0; }
+
+    /* Probe resaltado / apagado por filtro */
+    .probe.filtro-disponible  { border-color: var(--naranja); box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    .probe.caso-disponible    { border-color: var(--morado);  box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+    .probe.filtro-no-disponible { opacity: 0.35; border-color: transparent; }
+
+    /* Badge caso activo — compacto, solo nombre + contador */
+    .caso-activo-panel {
+      position: absolute; top: 6px; right: 6px; z-index: 8;
+      background: rgba(255,255,255,0.95);
+      border: 1.5px solid var(--morado);
+      border-radius: 10px; padding: 5px 10px;
+      box-shadow: 0 2px 12px rgba(107,79,168,0.15);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center; gap: 8px;
+      cursor: pointer;
+    }
+    .caso-activo-panel:hover { background: var(--morado-l); }
+    .caso-activo-panel.visible { display: flex; }
+    .caso-activo-label {
+      font-size: 8px; font-weight: 600; color: var(--morado);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      display: block; margin-bottom: 1px;
+    }
+    .caso-activo-nombre {
+      font-size: 12px; font-weight: 700; color: var(--text);
+      line-height: 1.2; max-width: 120px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .caso-activo-contador {
+      font-size: 12px; font-weight: 700; color: var(--morado);
+      background: var(--morado-l); border-radius: 20px;
+      padding: 2px 8px; flex-shrink: 0; white-space: nowrap;
+    }
+
+    /* ── BOTÓN OJITO ── */
+    .clip-btn-preview {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      padding: 0;
+    }
+    .clip-btn-preview:hover {
+      background: var(--teal-l);
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+
+    /* ── MODAL DE PREVISUALIZACIÓN ── */
+    #preview-modal {
+      display: none;
+      position: absolute;
+      z-index: 100;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+      /* tamaño por defecto (minimizado) */
+      width: 240px;
+      /* la altura se ajusta al ratio 4:3 del vídeo */
+      aspect-ratio: 4/3;
+      /* posición: esquina inferior izquierda de la silueta */
+      bottom: 12px;
+      left: 12px;
+      transition: width 0.25s cubic-bezier(.4,0,.2,1),
+                  height 0.25s cubic-bezier(.4,0,.2,1),
+                  bottom 0.25s cubic-bezier(.4,0,.2,1),
+                  left 0.25s cubic-bezier(.4,0,.2,1),
+                  border-radius 0.2s;
+    }
+    #preview-modal.visible { display: block; }
+    #preview-modal.maximizado {
+      width: calc(100% - 24px);
+      bottom: 12px;
+      left: 12px;
+      border-radius: 18px;
+    }
+
+    #preview-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Barra de controles flotante encima del vídeo */
+    .preview-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 8px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%);
+    }
+    .preview-bar-titulo {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .preview-icon-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      padding: 0;
+    }
+    .preview-icon-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Indicadores sobre los probes */
+    .probe-indicator {
+      position: absolute;
+      top: -6px; left: -6px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10; pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .probe-indicator.pendiente {
+      background: rgba(255,255,255,0.9);
+      border-color: var(--morado);
+    }
+    .probe-indicator.emitido {
+      background: var(--morado);
+      border-color: var(--morado);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-contenido">
+
+  <header class="header">
+    <button type="button" class="header-back" id="btn-salir">← Salir</button>
+    <span class="header-title">Panel de control</span>
+    <div class="header-right">
+      <div class="conn-status">
+        <span class="conn-dot" id="conn-dot"></span>
+        <span id="conn-texto">Conectando...</span>
+      </div>
+      <span class="timer" id="timer">00:00</span>
+
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="silueta-panel">
+      <div class="silueta-wrap" id="silueta-wrap">
+        <img src="/images/silueta-anatomica.svg" alt="Silueta anatómica" id="silueta-img">
+
+        <div class="sala-badge">
+          <span class="sala-badge-label">Código de sesión</span>
+          <span class="sala-badge-codigo" id="sala-badge-codigo"></span>
+        </div>
+
+        <div class="caso-activo-panel" id="caso-activo-panel">
+          <div>
+            <span class="caso-activo-label">Caso clínico activo</span>
+            <div class="caso-activo-nombre" id="caso-activo-nombre"></div>
+          </div>
+          <div class="caso-activo-contador" id="caso-activo-contador">0/0</div>
+        </div>
+
+        <button class="filtro-badge" id="filtro-badge">
+          <span class="filtro-badge-label">Preselección</span>
+          <span class="filtro-badge-valor" id="filtro-badge-valor">Todos</span>
+        </button>
+
+        <div class="filtro-menu" id="filtro-menu">
+          <div id="filtro-casos-wrap">
+            <div class="filtro-grupo-label">Casos clínicos</div>
+            <div class="filtro-chips" id="filtro-casos-chips"></div>
+            <div class="filtro-separador"></div>
+          </div>
+          <div class="filtro-grupo-label">Filtro rápido</div>
+          <div class="filtro-chips" id="filtro-rapido-chips"></div>
+        </div>
+
+        <!-- 1. Pulmonar apical D -->
+        <button class="probe" style="left:30%;top:22%" data-zona="pulmonar-apical-d" title="Pulmonar apical derecho">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+        </button>
+        <!-- 1. Pulmonar apical I -->
+        <button class="probe" style="left:70%;top:22%" data-zona="pulmonar-apical-i" title="Pulmonar apical izquierdo">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+        </button>
+
+        <!-- 2. Pulmonar basal D -->
+        <button class="probe" style="left:22%;top:38%" data-zona="pulmonar-basal-d" title="Pulmonar basal derecho">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+        </button>
+        <!-- 2. Pulmonar basal I -->
+        <button class="probe" style="left:78%;top:38%" data-zona="pulmonar-basal-i" title="Pulmonar basal izquierdo">
+          <img src="/images/icono-pulmon.png" alt="Pulmón">
+        </button>
+
+        <!-- 3. Cardíaco eje largo/corto -->
+        <button class="probe" style="left:55%;top:28%" data-zona="cardiaco-eje" title="Cardíaco eje largo y corto">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+        </button>
+
+        <!-- 4. Cardíaco apical -->
+        <button class="probe" style="left:64%;top:35%" data-zona="cardiaco-apical" title="Cardíaco apical">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+        </button>
+
+        <!-- 5. Cardíaco subcostal -->
+        <button class="probe" style="left:55%;top:42%" data-zona="cardiaco-subcostal" title="Cardíaco subcostal">
+          <img src="/images/icono-corazon.png" alt="Corazón">
+        </button>
+
+        <!-- 6. Grandes vasos -->
+        <button class="probe" style="left:50%;top:50%" data-zona="grandes-vasos" title="Grandes vasos">
+          <img src="/images/icono-aorta.png" alt="Aorta">
+        </button>
+
+        <!-- 7. Morrison D -->
+        <button class="probe" style="left:28%;top:55%" data-zona="morrison" title="Espacio de Morrison">
+          <img src="/images/icono-rinon.png" alt="Riñón">
+        </button>
+        <!-- 7. Esplenorrenal I -->
+        <button class="probe" style="left:72%;top:55%" data-zona="esplenorenal" title="Esplenorrenal">
+          <img src="/images/icono-rinon.png" alt="Riñón">
+        </button>
+
+        <!-- 8. Douglas -->
+        <button class="probe" style="left:50%;top:64%" data-zona="douglas" title="Douglas">
+          <img src="/images/icono-utero.png" alt="Útero">
+        </button>
+
+        <!-- 9. Venas MMII D -->
+        <button class="probe" style="left:34%;top:80%" data-zona="venas-d" title="Venas MMII derecho">
+          <img src="/images/icono-aorta.png" alt="Venas">
+        </button>
+        <!-- 9. Venas MMII I -->
+        <button class="probe" style="left:66%;top:80%" data-zona="venas-i" title="Venas MMII izquierdo">
+          <img src="/images/icono-aorta.png" alt="Venas">
+        </button>
+
+        <!-- Modal de previsualización -->
+        <div id="preview-modal">
+          <video id="preview-video" autoplay loop muted playsinline></video>
+          <div class="preview-bar">
+            <span class="preview-bar-titulo" id="preview-titulo"></span>
+            <button class="preview-icon-btn" id="preview-btn-toggle" title="Maximizar">
+              <!-- ícono maximize; se cambia dinámicamente con JS -->
+              <svg id="preview-icon-max" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+              <svg id="preview-icon-min" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+                <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+              </svg>
+            </button>
+            <button class="preview-icon-btn" id="preview-btn-cerrar" title="Cerrar">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Desplegable de clips: se reposiciona y repuebla con JS -->
+        <div class="probe-dropdown" id="probe-dropdown">
+          <div class="dropdown-header">
+            <strong id="dd-titulo"></strong>
+            <span id="dd-sub"></span>
+          </div>
+          <div class="dropdown-clips" id="dd-clips"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="now-playing" id="now-playing">
+    <span class="now-playing-label">Emitiendo</span>
+    <span class="now-playing-titulo" id="now-playing-titulo"></span>
+  </div>
+
+  <footer class="footer">
+    <button class="foot-btn" id="btn-congelar"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>Congelar</button>
+    <button class="foot-btn detener" id="btn-detener"><svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>Detener</button>
+  </footer>
+
+  <div class="logos-bar">
+    <img src="/images/logo-isabial.png" alt="ISABIAL" class="logo-isabial">
+    <div class="logos-bar-divider"></div>
+    <img src="/images/logo-simia.png" alt="SimIA">
+    <div class="logos-bar-divider"></div>
+    <img src="/images/logo-ecocritic.png" alt="Ecocritic">
+  </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-transporte.js"></script>
+  <script src="/control.js"></script>
+</body>
+</html>

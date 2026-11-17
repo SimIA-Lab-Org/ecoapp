@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluación · EcoApp SimIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f0f2f5;
+      --surface:   #ffffff;
+      --border:    rgba(0,0,0,0.1);
+      --text:      #111;
+      --muted:     #666;
+      --teal:      #0d6b53;
+      --teal-l:    #e0f4ee;
+      --red:       #a32020;
+      --red-l:     #fbeaea;
+      --green:     #1e6b2e;
+      --green-l:   #e4f5e8;
+      --amber:     #7a4800;
+      --amber-l:   #fef3e0;
+      --font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+    }
+    .header-back {
+      font-size: 13px; color: var(--muted);
+      padding: 6px 8px; border-radius: 6px;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .header-back:hover { background: var(--bg); }
+    .header-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .conn { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); }
+    .conn span { display: inline-flex; align-items: center; gap: 4px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+    .dot.on { background: #3aaa5e; }
+    .crono {
+      font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+      color: var(--teal); min-width: 50px; text-align: right;
+    }
+    .crono.pausado { color: var(--amber); }
+    .crono.excedido { color: var(--red); }
+
+    .contenido {
+      max-width: 760px; margin: 0 auto;
+      padding: 14px 12px 40px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .pantalla { display: none; }
+    .pantalla.visible { display: flex; flex-direction: column; gap: 14px; }
+
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .card-titulo { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+    .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .campo label { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .campo select, .campo input, .campo textarea {
+      padding: 11px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px; font-family: var(--font);
+      background: var(--bg); color: var(--text);
+      width: 100%;
+    }
+    .campo textarea { resize: vertical; min-height: 80px; font-size: 14px; }
+    .campo select:focus, .campo input:focus, .campo textarea:focus { outline: none; border-color: var(--teal); background: var(--surface); }
+    .ayuda { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .btn {
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: 0.5px solid var(--border);
+      background: var(--bg);
+      font-size: 14px; font-weight: 500; font-family: var(--font);
+      color: var(--text); cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .btn:hover { background: #e4e6e9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primario { background: var(--teal); color: white; border-color: var(--teal); }
+    .btn-primario:hover { background: #0a5a45; }
+    .btn-ancho { width: 100%; }
+    .fila-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fila-btns .btn { flex: 1; min-width: 140px; }
+
+    .resumen-proto {
+      display: none;
+      padding: 12px; margin-bottom: 14px;
+      background: var(--bg); border-radius: 12px;
+      font-size: 13px; color: var(--muted); line-height: 1.5;
+    }
+    .resumen-proto.visible { display: block; }
+    .resumen-proto strong { color: var(--text); font-weight: 500; }
+
+    .aviso {
+      padding: 12px 14px; border-radius: 12px;
+      font-size: 13px; line-height: 1.45;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .aviso.info  { background: var(--teal-l); color: var(--teal); }
+    .aviso.warn  { background: var(--amber-l); color: var(--amber); }
+    .aviso .btn  { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
+    .aviso span  { flex: 1; }
+
+    /* ── MONITOR (mini vídeo) ── */
+    .monitor { display: flex; gap: 12px; align-items: stretch; }
+    .monitor-video {
+      position: relative;
+      width: 46%; max-width: 300px; flex-shrink: 0;
+      aspect-ratio: 4/3;
+      background: #000; border-radius: 12px; overflow: hidden;
+    }
+    .monitor-video video { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .monitor-capa {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: rgba(255,255,255,0.45); text-align: center; padding: 8px;
+      background: #000;
+    }
+    .monitor-pausa {
+      position: absolute; top: 6px; right: 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      color: #ffdd00; display: none;
+    }
+    .monitor-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+    .info-etq { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .info-clip-zona { font-size: 14px; font-weight: 600; }
+    .info-clip-nombre { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; font-weight: 500; }
+    .badge-p { background: var(--red-l); color: var(--red); }
+    .badge-n { background: var(--green-l); color: var(--green); }
+    .info-alumno { font-size: 13px; }
+    .info-alumno b { font-weight: 600; }
+    .progreso { font-size: 12px; color: var(--muted); }
+    .barra { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .barra div { height: 100%; background: var(--teal); width: 0; transition: width 0.3s; }
+    @media (max-width: 520px) {
+      .monitor { flex-direction: column; }
+      .monitor-video { width: 100%; max-width: none; aspect-ratio: 16/9; }
+    }
+
+    /* ── CHECKLIST ── */
+    .pasos { display: flex; flex-direction: column; gap: 8px; }
+    .paso {
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--bg);
+      padding: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .paso.actual   { border: 1.5px solid var(--teal); }
+    .paso.emitiendo { box-shadow: 0 0 0 3px rgba(13,107,83,0.18); }
+    .paso-cab { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .paso-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--surface); color: var(--muted);
+      border: 0.5px solid var(--border);
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .paso.hecho-ok .paso-num    { background: var(--green); color: white; border-color: var(--green); }
+    .paso.hecho-fallo .paso-num { background: var(--red);   color: white; border-color: var(--red); }
+    .paso-texto { flex: 1; font-size: 14px; font-weight: 500; line-height: 1.35; }
+    .paso-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 11px; color: var(--muted); align-items: center; }
+    .paso-meta .zona { color: var(--teal); display: inline-flex; align-items: center; gap: 3px; }
+    .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 8px; }
+    .tag-auto  { background: var(--teal-l); color: var(--teal); }
+    .tag-orden { background: var(--amber-l); color: var(--amber); }
+    .paso-tiempo { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; padding-top: 4px; }
+
+    .linea {
+      display: flex; align-items: center; gap: 10px;
+      padding: 6px 0 6px 36px;
+      border-top: 0.5px solid var(--border);
+    }
+    .linea-txt { flex: 1; min-width: 0; font-size: 13px; line-height: 1.3; }
+    .linea-txt b { font-weight: 600; color: var(--muted); font-size: 12px; }
+    .linea-txt .estrella { color: var(--teal); }
+    .marcas { display: flex; gap: 6px; flex-shrink: 0; }
+    .marca {
+      width: 46px; height: 40px;
+      border-radius: 10px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .marca.ok.on    { background: var(--green); color: white; border-color: var(--green); }
+    .marca.fallo.on { background: var(--red);   color: white; border-color: var(--red); }
+    @media (hover: hover) {
+      .marca.ok:hover:not(.on)    { background: var(--green-l); color: var(--green); }
+      .marca.fallo:hover:not(.on) { background: var(--red-l);   color: var(--red); }
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(20px);
+      background: #222; color: white;
+      padding: 10px 16px; border-radius: 12px;
+      font-size: 13px; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 50; max-width: 90vw; text-align: center;
+    }
+    .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── RESULTADO ── */
+    .veredicto {
+      text-align: center; padding: 22px 16px; border-radius: 16px;
+    }
+    .veredicto.apto    { background: var(--green-l); color: var(--green); }
+    .veredicto.no-apto { background: var(--red-l);   color: var(--red); }
+    .veredicto-txt { font-size: 30px; font-weight: 700; letter-spacing: 1px; }
+    .veredicto-sub { font-size: 14px; margin-top: 6px; }
+    .motivos { margin-top: 12px; font-size: 13px; line-height: 1.5; color: var(--text); text-align: left; }
+    .motivos li { margin-left: 18px; }
+    .tabla-res { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tabla-res th { text-align: left; font-size: 11px; color: var(--muted); font-weight: 600; padding: 6px 6px; border-bottom: 0.5px solid var(--border); }
+    .tabla-res td { padding: 8px 6px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+    .r-ok    { color: var(--green); font-weight: 600; }
+    .r-fallo { color: var(--red);   font-weight: 600; }
+    .r-na    { color: #bbb; }
+
+    .icon-inline { display: inline-flex; vertical-align: -2px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <button type="button" class="header-back" id="btn-salir">← Salir</button>
+    <span class="header-title">Evaluación</span>
+    <div class="conn">
+      <span><i class="dot" id="dot-control"></i>Control</span>
+      <span><i class="dot" id="dot-eco"></i>Alumno</span>
+    </div>
+    <span class="crono" id="crono">00:00</span>
+  </header>
+
+  <div class="contenido">
+
+    <!-- ═══ 1. CONFIGURACIÓN ═══ -->
+    <div class="pantalla visible" id="pantalla-config">
+      <div class="aviso info" id="aviso-recuperar" style="display:none">
+        <span id="aviso-recuperar-txt"></span>
+        <button class="btn" id="btn-recuperar">Continuar</button>
+        <button class="btn" id="btn-descartar">Descartar</button>
+      </div>
+
+      <div class="card">
+        <div class="card-titulo">Nueva evaluación</div>
+        <div class="campo">
+          <label for="sel-protocolo">Protocolo</label>
+          <select id="sel-protocolo"><option value="">Cargando protocolos...</option></select>
+        </div>
+        <div class="resumen-proto" id="resumen-proto"></div>
+        <div class="campo">
+          <label for="inp-alumno">ID del alumno</label>
+          <input type="text" id="inp-alumno" placeholder="Ej: A-023" maxlength="40" autocomplete="off">
+          <span class="ayuda">Mejor un código que el nombre completo, para no guardar datos personales en el informe.</span>
+        </div>
+        <button class="btn btn-primario btn-ancho" id="btn-empezar" disabled>Empezar evaluación</button>
+      </div>
+    </div>
+
+    <!-- ═══ 2. EVALUACIÓN ═══ -->
+    <div class="pantalla" id="pantalla-eval">
+      <div class="aviso warn" id="aviso-cerrada" style="display:none">
+        <span>El instructor ha cerrado la sesión. Puedes terminar de marcar y finalizar la evaluación.</span>
+      </div>
+
+      <div class="card">
+        <div class="monitor">
+          <div class="monitor-video">
+            <video id="mini-video" autoplay loop muted playsinline></video>
+            <div class="monitor-capa" id="mini-capa">Esperando imagen del instructor...</div>
+            <div class="monitor-pausa" id="mini-pausa">PAUSA</div>
+          </div>
+          <div class="monitor-info">
+            <div>
+              <div class="info-etq">Emitiendo</div>
+              <div class="info-clip-zona" id="info-zona">—</div>
+              <div class="info-clip-nombre" id="info-nombre"></div>
+            </div>
+            <div class="info-alumno">Alumno <b id="info-alumno"></b> · <span id="info-protocolo"></span></div>
+            <div>
+              <div class="progreso" id="info-progreso"></div>
+              <div class="barra"><div id="info-barra"></div></div>
+            </div>
+            <button class="btn" id="btn-crono" style="align-self:flex-start;padding:8px 12px;font-size:13px"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-titulo">Checklist</div>
+        <div class="pasos" id="lista-pasos"></div>
+      </div>
+
+      <div class="card" id="card-diagnostico" style="display:none">
+        <div class="card-titulo">Diagnóstico final</div>
+        <div class="linea" style="padding-left:0;border-top:none">
+          <div class="linea-txt" id="diag-txt"></div>
+          <div class="marcas" id="diag-marcas"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="campo" style="margin-bottom:0">
+          <label for="inp-observaciones">Observaciones</label>
+          <textarea id="inp-observaciones" placeholder="Comentarios para el alumno: técnica, dudas, qué repasar..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn btn-primario btn-ancho" id="btn-finalizar">Finalizar evaluación</button>
+    </div>
+
+    <!-- ═══ 3. RESULTADO ═══ -->
+    <div class="pantalla" id="pantalla-resultado">
+      <div class="card">
+        <div class="veredicto" id="veredicto">
+          <div class="veredicto-txt" id="veredicto-txt"></div>
+          <div class="veredicto-sub" id="veredicto-sub"></div>
+        </div>
+        <ul class="motivos" id="motivos"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-titulo">Detalle</div>
+        <div style="overflow-x:auto"><table class="tabla-res" id="tabla-res"></table></div>
+      </div>
+
+      <div class="fila-btns">
+        <button class="btn btn-primario" id="btn-pdf">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </button>
+        <button class="btn" id="btn-json">Descargar datos (JSON)</button>
+      </div>
+      <div class="fila-btns">
+        <button class="btn" id="btn-corregir">Corregir marcas</button>
+        <button class="btn" id="btn-nueva">Nueva evaluación</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-transporte.js"></script>
+  <script src="/vendor/jspdf/jspdf.umd.min.js"></script>
+  <script src="/entrenamiento.js"></script>
+</body>
+</html>

@@ -1,0 +1,2367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Gestión de vídeos · EcoApp SimIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f0f2f5;
+      --surface: #ffffff;
+      --border:  rgba(0,0,0,0.1);
+      --text:    #111;
+      --muted:   #666;
+      --teal:    #0d6b53;
+      --teal-l:  #e0f4ee;
+      --red:     #a32020;
+      --red-l:   #fbeaea;
+      --green:   #1e6b2e;
+      --green-l: #e4f5e8;
+      --morado:  #6b4fa8;
+      --morado-l: #f0eaf9;
+      --font:    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+    .header-back {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.1s;
+    }
+    .header-back:hover { background: var(--bg); }
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+      color: var(--text);
+    }
+
+    /* ── CONTENIDO ── */
+    .contenido {
+      flex: 1;
+      padding: 20px 16px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── TARJETA SUBIR ── */
+    .card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    }
+    .card-titulo {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-titulo svg { color: var(--teal); flex-shrink: 0; }
+
+    .campo { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .campo label { font-size: 12px; font-weight: 500; color: var(--muted); }
+    .campo select,
+    .campo input[type="text"] {
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      appearance: none;
+    }
+    .campo select:focus,
+    .campo input:focus {
+      outline: none;
+      border-color: var(--teal);
+      background: var(--surface);
+    }
+
+    /* Toggle normal / patológico */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 13px; color: var(--text); flex: 1; }
+    .toggle-label small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--red); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    /* Zona de arrastrar / seleccionar archivo */
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--bg);
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over { border-color: var(--teal); background: var(--teal-l); }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-zona-icon { color: var(--teal); margin-bottom: 10px; }
+    .drop-zone p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .drop-zone strong { color: var(--text); }
+    .drop-zone .archivo-seleccionado {
+      font-size: 13px;
+      color: var(--teal);
+      font-weight: 500;
+      margin-top: 6px;
+    }
+
+    /* Barra de progreso */
+    .progreso-wrap { display: none; margin-bottom: 14px; }
+    .progreso-wrap.visible { display: block; }
+    .progreso-bar-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .progreso-bar {
+      height: 100%;
+      background: var(--teal);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+    .progreso-texto { font-size: 12px; color: var(--muted); text-align: center; }
+
+    /* Botón subir */
+    .btn-subir {
+      width: 100%;
+      padding: 13px;
+      background: var(--teal);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-subir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Mensaje de resultado */
+    .resultado {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-top: 12px;
+      align-items: center;
+      gap: 8px;
+    }
+    .resultado.visible { display: flex; }
+    .resultado.ok  { background: var(--green-l); color: var(--green); }
+    .resultado.err { background: var(--red-l);   color: var(--red); }
+
+    /* ── LISTADO DE VÍDEOS SUBIDOS ── */
+    .lista-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .lista-header .card-titulo { margin-bottom: 0; }
+
+    /* ── Tarjeta desplegable (vídeos en la nube) ── */
+    .card-colapsable > .lista-header { margin-bottom: 0; }
+    .card-colapsable.abierta > .lista-header { margin-bottom: 12px; }
+    .colapsable-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+    .colapsable-toggle .chevron {
+      color: var(--muted);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .card-colapsable.abierta .colapsable-toggle .chevron { transform: rotate(90deg); }
+    .colapsable-body { display: none; }
+    .card-colapsable.abierta .colapsable-body { display: block; }
+    .colapsable-contador {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 2px 9px;
+      margin-left: 2px;
+    }
+    .btn-refrescar {
+      font-size: 12px;
+      color: var(--muted);
+      background: none;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: var(--font);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-refrescar:hover { background: var(--bg); }
+
+    .clip-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      margin-bottom: 8px;
+    }
+    .clip-thumb {
+      width: 52px;
+      height: 40px;
+      border-radius: 8px;
+      background: #ddd;
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+    }
+    .clip-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .clip-meta { flex: 1; min-width: 0; }
+    .clip-meta-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .clip-meta-sub    { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .badge-p { background: var(--red-l);   color: var(--red); }
+    .badge-n { background: var(--green-l); color: var(--green); }
+    .btn-borrar {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-borrar:hover { background: var(--red-l); color: var(--red); border-color: var(--red); }
+
+    .lista-vacia {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PANTALLA DE CONTRASEÑA ── */
+    #pantalla-pwd {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 999;
+    }
+    .pwd-card {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 18px; padding: 2rem 1.8rem; width: 92%; max-width: 360px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07); text-align: center;
+    }
+    .pwd-logo { font-size: 20px; font-weight: 700; color: var(--teal); margin-bottom: 6px; }
+    .pwd-desc { font-size: 13px; color: var(--muted); margin-bottom: 1.4rem; }
+    .pwd-input {
+      width: 100%; padding: 11px 14px; border: 0.5px solid var(--border);
+      border-radius: 10px; font-size: 15px; font-family: var(--font);
+      background: var(--bg); color: var(--text); text-align: center;
+      letter-spacing: 2px; margin-bottom: 10px; display: block;
+    }
+    .pwd-input:focus { outline: none; border-color: var(--teal); background: var(--surface); }
+    .pwd-btn {
+      width: 100%; padding: 12px; background: var(--teal); color: white;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 500;
+      font-family: var(--font); cursor: pointer; display: block;
+    }
+    .pwd-error { font-size: 12px; color: var(--red); margin-top: 8px; min-height: 16px; }
+
+    /* ── EDICIÓN Y VISTA PREVIA ── */
+    .clip-item { flex-wrap: wrap; }
+    .clip-acciones {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .btn-editar {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-editar:hover { background: var(--teal-l); color: var(--teal); border-color: var(--teal); }
+    .btn-preview {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-preview:hover { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+
+    /* Panel de edición inline */
+    .clip-edit-panel {
+      display: none;
+      width: 100%;
+      background: var(--bg);
+      border-top: 0.5px solid var(--border);
+      margin-top: 10px;
+      padding-top: 12px;
+      gap: 10px;
+      flex-direction: column;
+    }
+    .clip-edit-panel.visible { display: flex; }
+    .edit-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .edit-campo { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+    .edit-campo label { font-size: 11px; font-weight: 500; color: var(--muted); }
+    .edit-campo input, .edit-campo select {
+      padding: 8px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      width: 100%;
+    }
+    .edit-campo input:focus, .edit-campo select:focus {
+      outline: none; border-color: var(--teal);
+    }
+    .edit-toggle-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .edit-toggle-row label { font-size: 13px; color: var(--text); flex: 1; }
+    .edit-acciones { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-guardar {
+      padding: 8px 16px;
+      background: var(--teal); color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+    }
+    .btn-cancelar-edit {
+      padding: 8px 16px;
+      background: none; color: var(--muted);
+      border: 0.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: var(--font); cursor: pointer;
+    }
+    .edit-msg { font-size: 12px; padding: 4px 0; }
+    .edit-msg.ok  { color: var(--green); }
+    .edit-msg.err { color: var(--red); }
+
+    /* Modal de vista previa */
+    #preview-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7);
+      align-items: center; justify-content: center;
+    }
+    #preview-modal.visible { display: flex; }
+    .preview-box {
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      max-width: 90vw;
+      max-height: 85vh;
+      position: relative;
+    }
+    .preview-box video {
+      display: block;
+      max-width: 85vw;
+      max-height: 80vh;
+    }
+    .preview-close {
+      position: absolute; top: 10px; right: 10px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      color: white; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .preview-close:hover { background: rgba(255,255,255,0.3); }
+
+    /* ── CASOS CLÍNICOS ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 0.5px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      font-family: var(--font);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.activa { color: var(--teal); border-bottom-color: var(--teal); }
+    .tab-seccion { display: none; }
+    .tab-seccion.visible { display: flex; flex-direction: column; gap: 20px; }
+
+    .caso-item {
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .caso-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px;
+    }
+    .caso-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--morado); flex-shrink: 0;
+    }
+    .caso-meta { flex: 1; min-width: 0; }
+    .caso-nombre { font-size: 13px; font-weight: 500; color: var(--text); }
+    .caso-desc   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .caso-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-info-caso, .btn-editar-caso {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      transition: background 0.1s, color 0.1s;
+    }
+    .btn-info-caso:hover  { background: var(--morado-l); color: var(--morado); border-color: var(--morado); }
+    .btn-editar-caso:hover { background: var(--teal-l); color: var(--teal); border-color: var(--teal); }
+
+    .caso-clips-lista {
+      border-top: 0.5px solid var(--border);
+      padding: 8px 12px;
+      display: none;
+      flex-direction: column; gap: 4px;
+    }
+    .caso-clips-lista.visible { display: flex; }
+    .caso-clip-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+    }
+    .caso-clip-zona { color: var(--text); font-weight: 500; flex: 1; }
+    .caso-clip-nombre { font-size: 11px; }
+
+    /* Panel edición de caso */
+    .caso-edit-panel {
+      display: none;
+      border-top: 0.5px solid var(--border);
+      padding: 12px;
+      flex-direction: column;
+      gap: 10px;
+      background: var(--surface);
+    }
+    .caso-edit-panel.visible { display: flex; }
+
+    /* Formulario nuevo caso */
+    .nuevo-caso-form {
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      padding: 16px;
+    }
+    .clips-selector {
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .zona-grupo { border-bottom: 0.5px solid var(--border); }
+    .zona-grupo:last-child { border-bottom: none; }
+    /* Cabecera de zona (clicable) */
+    .zona-grupo-titulo {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.04em;
+      padding: 9px 12px;
+      background: var(--bg);
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
+    }
+    .zona-grupo-titulo .zona-chevron {
+      color: var(--muted); flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .zona-grupo.abierta > .zona-grupo-titulo .zona-chevron { transform: rotate(90deg); }
+    .zona-grupo-titulo .zona-nombre { flex: 1; }
+    .zona-grupo-titulo .zona-contador {
+      font-size: 10px; font-weight: 700;
+      color: #6b4fa8; background: #efeaf7;
+      border-radius: 20px; padding: 1px 8px;
+      letter-spacing: 0; text-transform: none;
+      display: none;   /* solo se muestra si hay clips marcados */
+    }
+    .zona-grupo-titulo .zona-contador.tiene { display: inline-block; }
+    /* Cuerpo plegable */
+    .zona-grupo-clips { display: none; }
+    .zona-grupo.abierta > .zona-grupo-clips { display: block; }
+    .clip-check-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .clip-check-row:hover { background: var(--teal-l); }
+    .clip-check-row input[type="checkbox"] { accent-color: #6b4fa8; width: 14px; height: 14px; flex-shrink: 0; }
+    .clip-check-nombre { font-size: 13px; color: var(--text); flex: 1; }
+    .clip-check-badge {
+      font-size: 10px; padding: 1px 6px; border-radius: 6px; font-weight: 500;
+    }
+
+    /* ── PROTOCOLOS ── */
+    .campo input[type="number"],
+    .campo textarea {
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+    }
+    .campo textarea { resize: vertical; min-height: 60px; }
+    .campo input[type="number"]:focus,
+    .campo textarea:focus { outline: none; border-color: var(--teal); background: var(--surface); }
+    .campo-fila { display: flex; gap: 10px; flex-wrap: wrap; }
+    .campo-fila > .campo { flex: 1; min-width: 140px; }
+    .campo-ayuda { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+    .proto-bloque {
+      border-top: 0.5px solid var(--border);
+      padding-top: 14px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    .proto-bloque-titulo {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* Selector segmentado (nivel / tipo) */
+    .seg {
+      display: flex;
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .seg-btn.activa { background: var(--surface); color: var(--teal); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+    /* Checklist de pasos */
+    .pasos-lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .paso-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 8px 8px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+    .paso-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--teal-l); color: var(--teal);
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .paso-cuerpo { flex: 1; min-width: 0; }
+    .paso-texto { font-size: 13px; color: var(--text); line-height: 1.35; word-break: break-word; }
+    .paso-zona {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--teal); margin-top: 3px;
+    }
+    .paso-zona svg { flex-shrink: 0; }
+    /* En móvil los botones van debajo del texto para no estrecharlo */
+    @media (max-width: 560px) {
+      .paso-row { flex-wrap: wrap; row-gap: 6px; }
+      .paso-cuerpo { flex: 1 1 calc(100% - 40px); }
+      .paso-acciones { width: 100%; justify-content: flex-end; }
+      .paso-row .paso-edit { flex: 1 1 calc(100% - 40px); }
+    }
+    /* Editor de paso (nuevo y edición en línea) */
+    .pe-titulo { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .pe { display: flex; flex-direction: column; gap: 6px; }
+    .pe-eval {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+    .paso-row .pe-eval { background: var(--surface); }
+    .pe-fila { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+    .pe-fila > span { flex: 1; font-size: 13px; color: var(--text); }
+    .pe-sub { display: none; flex-direction: column; gap: 6px; padding: 0 0 4px 0; }
+    .pe-sub.visible { display: flex; }
+    .pe-oblig {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+      cursor: pointer; user-select: none;
+    }
+    .pe-oblig input { width: 18px; height: 18px; accent-color: var(--teal); flex-shrink: 0; }
+    .pe-err { font-size: 12px; color: var(--red); min-height: 0; }
+    .pe-err:empty { display: none; }
+    .btn-anadir-paso { align-self: flex-end; padding: 10px 16px; }
+    .pe .toggle { width: 40px; height: 24px; }
+    .pe .toggle-slider::before { width: 18px; height: 18px; }
+    .pe .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Etiquetas de ventana / hallazgo bajo cada paso */
+    .paso-evals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .paso-eval {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      color: var(--text);
+    }
+    .paso-eval b { font-weight: 600; color: var(--muted); }
+    .paso-eval.imprescindible { border-color: var(--teal); }
+    .paso-eval.imprescindible::after { content: ' ★'; color: var(--teal); }
+    .proto-detalle .paso-evals { margin-top: 3px; }
+    .proto-detalle .paso-eval { background: var(--bg); }
+
+    /* Los interruptores de protocolos en verde (el rojo es para "patológico") */
+    #card-protocolos .toggle input:checked + .toggle-slider { background: var(--teal); }
+    .paso-zona.sin-zona { color: var(--muted); }
+    .paso-acciones { display: flex; gap: 4px; flex-shrink: 0; }
+    .btn-icono {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; padding: 0;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+    .btn-icono:hover:not(:disabled) { background: var(--teal-l); color: var(--teal); border-color: var(--teal); }
+    .btn-icono.peligro:hover:not(:disabled) { background: var(--red-l); color: var(--red); border-color: var(--red); }
+    .btn-icono:disabled { opacity: 0.3; cursor: default; }
+    .paso-edit { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .paso-edit input[type="text"], .paso-edit select,
+    .paso-nuevo input[type="text"], .paso-nuevo select {
+      padding: 9px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      width: 100%;
+    }
+    .paso-edit input[type="text"]:focus, .paso-edit select:focus,
+    .paso-nuevo input[type="text"]:focus, .paso-nuevo select:focus { outline: none; border-color: var(--teal); }
+    .paso-nuevo {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px;
+      border: 1.5px dashed var(--border);
+      border-radius: 12px;
+    }
+    .paso-nuevo-fila { display: flex; gap: 6px; }
+    .paso-nuevo-fila select { flex: 1; min-width: 0; }
+    .btn-anadir-paso {
+      padding: 9px 14px;
+      background: var(--teal); color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+      white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .sub-bloque {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin: -4px 0 12px 0;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+    .sub-bloque.visible { display: flex; }
+    .sub-bloque .campo { margin-bottom: 0; }
+    .sub-bloque .campo input[type="text"] { background: var(--surface); }
+    .sub-bloque .toggle-row { margin-bottom: 0; }
+
+    /* Lista de protocolos guardados */
+    .proto-dot { background: var(--teal); }
+    .proto-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .proto-badge {
+      font-size: 10px; font-weight: 500;
+      padding: 2px 7px; border-radius: 8px;
+      background: var(--teal-l); color: var(--teal);
+    }
+    .proto-badge.nivel-medio    { background: #fef3e0; color: #7a4800; }
+    .proto-badge.nivel-avanzado { background: var(--red-l); color: var(--red); }
+    .proto-badge.gris           { background: #eceef1; color: var(--muted); }
+    .proto-detalle {
+      display: none;
+      border-top: 0.5px solid var(--border);
+      padding: 10px 12px;
+      font-size: 12px; color: var(--muted);
+      flex-direction: column; gap: 6px;
+    }
+    .proto-detalle.visible { display: flex; }
+    .proto-detalle ol { padding-left: 20px; display: flex; flex-direction: column; gap: 3px; color: var(--text); }
+    .proto-detalle strong { color: var(--text); font-weight: 500; }
+
+    .editando-aviso {
+      display: none;
+      align-items: center; gap: 8px;
+      padding: 9px 12px;
+      background: var(--teal-l); color: var(--teal);
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .editando-aviso.visible { display: flex; }
+    .editando-aviso span { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Modal de vista previa -->
+  <div id="preview-modal">
+    <div class="preview-box">
+      <video id="preview-video" controls autoplay></video>
+      <button class="preview-close" id="preview-close">✕</button>
+    </div>
+  </div>
+
+
+  <div id="pantalla-pwd">
+    <div class="pwd-card">
+      <div class="pwd-logo">EcoApp SimIA</div>
+      <p class="pwd-desc">Introduce la contraseña para acceder a la gestión de vídeos</p>
+      <input class="pwd-input" id="pwd-input" type="password" placeholder="••••••••••" maxlength="30">
+      <button class="pwd-btn" id="pwd-btn">Entrar</button>
+      <p class="pwd-error" id="pwd-error"></p>
+    </div>
+  </div>
+
+  <header class="header">
+    <a href="/" class="header-back">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><polyline points="15 18 9 12 15 6"/></svg>
+      Inicio
+    </a>
+    <span class="header-title">Gestión de vídeos</span>
+  </header>
+
+  <div class="contenido">
+
+    <!-- Casos clínicos -->
+    <div class="card">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Casos clínicos
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn activa" id="tab-lista-btn">Casos guardados</button>
+        <button class="tab-btn" id="tab-nuevo-btn">+ Nuevo caso</button>
+      </div>
+
+      <!-- Lista de casos (desplegable, para no crecer en scroll infinito) -->
+      <div class="tab-seccion visible" id="tab-lista">
+        <div class="card-colapsable" id="card-casos-lista">
+          <div class="lista-header">
+            <div class="colapsable-toggle" id="casos-toggle">
+              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <div class="card-titulo">Casos guardados</div>
+              <span class="colapsable-contador" id="casos-contador"></span>
+            </div>
+          </div>
+          <div class="colapsable-body">
+            <div id="lista-casos"><div class="lista-vacia">Cargando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario nuevo caso -->
+      <div class="tab-seccion" id="tab-nuevo">
+        <div class="nuevo-caso-form">
+          <div class="campo">
+            <label>Nombre del caso</label>
+            <input type="text" id="caso-nombre" placeholder="Ej: Paciente con disnea aguda">
+          </div>
+          <div class="campo">
+            <label>Descripción (opcional)</label>
+            <input type="text" id="caso-desc" placeholder="Ej: Varón 65 años, disnea y fiebre">
+          </div>
+          <div class="campo">
+            <label>Selecciona los clips de este caso</label>
+            <div class="clips-selector" id="clips-selector">
+              <div class="lista-vacia">Cargando clips...</div>
+            </div>
+          </div>
+          <div class="edit-acciones" style="margin-top:12px;">
+            <span class="edit-msg" id="caso-msg"></span>
+            <button class="btn-guardar" id="btn-guardar-caso">Guardar caso</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Protocolos -->
+    <div class="card" id="card-protocolos">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1z"/><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2"/><polyline points="8.5 13 10.5 15 15.5 10"/></svg>
+        Protocolos
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn activa" id="proto-tab-lista-btn">Protocolos guardados</button>
+        <button class="tab-btn" id="proto-tab-form-btn">+ Nuevo protocolo</button>
+      </div>
+
+      <!-- Lista -->
+      <div class="tab-seccion visible" id="proto-tab-lista">
+        <div class="card-colapsable" id="card-protocolos-lista">
+          <div class="lista-header">
+            <div class="colapsable-toggle" id="protocolos-toggle">
+              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <div class="card-titulo">Protocolos guardados</div>
+              <span class="colapsable-contador" id="protocolos-contador"></span>
+            </div>
+          </div>
+          <div class="colapsable-body">
+            <div id="lista-protocolos"><div class="lista-vacia">Cargando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario crear / editar -->
+      <div class="tab-seccion" id="proto-tab-form">
+        <div class="nuevo-caso-form">
+
+          <div class="editando-aviso" id="proto-editando-aviso">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span id="proto-editando-texto">Editando protocolo</span>
+          </div>
+
+          <!-- Datos generales -->
+          <div class="campo">
+            <label>Nombre del protocolo</label>
+            <input type="text" id="proto-nombre" placeholder="Ej: Valoración de derrame pericárdico" maxlength="120">
+          </div>
+          <div class="campo">
+            <label>Descripción (opcional)</label>
+            <input type="text" id="proto-desc" placeholder="Ej: Protocolo FOCUS cardíaco básico">
+          </div>
+          <div class="campo">
+            <label>Caso clínico vinculado (opcional)</label>
+            <select id="proto-caso"><option value="">— Ninguno —</option></select>
+          </div>
+          <div class="campo">
+            <label>Nivel</label>
+            <div class="seg" id="proto-nivel">
+              <button type="button" class="seg-btn activa" data-valor="basico">Básico</button>
+              <button type="button" class="seg-btn" data-valor="medio">Medio</button>
+              <button type="button" class="seg-btn" data-valor="avanzado">Avanzado</button>
+            </div>
+          </div>
+          <div class="campo">
+            <label>Tipo</label>
+            <div class="seg" id="proto-tipo">
+              <button type="button" class="seg-btn activa" data-valor="entrenamiento">Entrenamiento</button>
+              <button type="button" class="seg-btn" data-valor="simulacion">Solo simulación</button>
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Checklist</div>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                Orden obligatorio
+                <small>El alumno debe seguir los pasos en este orden</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="proto-orden" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="pasos-lista" id="proto-pasos"></div>
+
+            <div class="paso-nuevo">
+              <div class="pe-titulo">Nuevo paso</div>
+              <div id="paso-nuevo-editor"></div>
+              <button type="button" class="btn-anadir-paso" id="btn-anadir-paso">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Añadir paso
+              </button>
+            </div>
+            <p class="campo-ayuda" style="margin-top:6px"><strong>Zona de la silueta:</strong> en autoentrenamiento, la app comprueba sola que el alumno pulsa esta zona (y en orden, si está activado).<br><strong>Ventana y hallazgo:</strong> los puntúa el instructor con ✓/✗ durante el entrenamiento supervisado.</p>
+          </div>
+
+          <!-- Diagnóstico final -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Diagnóstico final</div>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                Evaluar diagnóstico
+                <small>Lo puntúa el instructor una sola vez, al terminar el caso (solo en entrenamiento supervisado)</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="proto-ev-diag">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sub-bloque" id="proto-diag-bloque">
+              <div class="campo">
+                <label>Diagnóstico esperado</label>
+                <input type="text" id="proto-diag-esperado" placeholder="Ej: Derrame pericárdico con taponamiento">
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">Imprescindible para superar</div>
+                <label class="toggle">
+                  <input type="checkbox" id="proto-diag-oblig" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Criterios -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Criterios para superar</div>
+            <div class="campo-fila">
+              <div class="campo">
+                <label>% mínimo de aciertos</label>
+                <input type="number" id="proto-porcentaje" min="0" max="100" step="5" value="80" inputmode="numeric">
+              </div>
+              <div class="campo">
+                <label>Tiempo máximo (min, opcional)</label>
+                <input type="number" id="proto-tiempo" min="0" step="0.5" placeholder="Sin límite" inputmode="decimal">
+              </div>
+            </div>
+            <p class="campo-ayuda">Cuenta como un acierto cada paso hecho y cada ventana, hallazgo y diagnóstico correctos. Lo marcado como imprescindible tiene que estar bien siempre, aunque se llegue al porcentaje.</p>
+          </div>
+
+          <div class="edit-acciones" style="margin-top:4px;">
+            <span class="edit-msg" id="proto-msg"></span>
+            <button class="btn-cancelar-edit" id="btn-cancelar-proto">Cancelar</button>
+            <button class="btn-guardar" id="btn-guardar-proto">Guardar protocolo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario de subida -->
+    <div class="card">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir nuevo vídeo
+      </div>
+
+      <div class="campo">
+        <label>Zona anatómica</label>
+        <select id="sel-zona">
+          <option value="">Cargando zonas...</option>
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Nombre del clip</label>
+        <input type="text" id="inp-nombre" placeholder="Ej: Derrame pleural moderado">
+      </div>
+
+      <div class="campo">
+        <label>Descripción breve (opcional)</label>
+        <input type="text" id="inp-sub" placeholder="Ej: Vista paraesternal larga">
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">
+          Clip patológico
+          <small>Activa si el vídeo muestra una patología</small>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="chk-patologico">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="inp-archivo" accept="video/mp4,.mp4">
+        <div class="drop-zona-icon">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <p><strong>Toca para seleccionar el vídeo</strong><br>o arrastra el archivo aquí · solo <strong>.mp4</strong></p>
+        <p class="archivo-seleccionado" id="archivo-nombre"></p>
+      </div>
+
+      <div class="progreso-wrap" id="progreso-wrap">
+        <div class="progreso-bar-bg">
+          <div class="progreso-bar" id="progreso-bar"></div>
+        </div>
+        <p class="progreso-texto" id="progreso-texto">Subiendo...</p>
+      </div>
+
+      <button class="btn-subir" id="btn-subir" disabled>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Subir vídeo
+      </button>
+
+      <div class="resultado" id="resultado"></div>
+    </div>
+
+    <!-- Listado de vídeos subidos (desplegable) -->
+    <div class="card card-colapsable" id="card-videos">
+      <div class="lista-header">
+        <div class="colapsable-toggle" id="videos-toggle">
+          <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <div class="card-titulo">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Vídeos en la nube
+          </div>
+          <span class="colapsable-contador" id="videos-contador"></span>
+        </div>
+        <button class="btn-refrescar" id="btn-refrescar">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Actualizar
+        </button>
+      </div>
+      <div class="colapsable-body">
+        <div id="lista-clips"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Recuperar sala de la URL para volver con contexto ───────────
+    const params = new URLSearchParams(location.search);
+    const sala   = params.get('sala');
+    if (sala) {
+    }
+
+    // ── Contraseña de acceso (verificada en servidor) ────────────────
+    (function() {
+      var pantalla = document.getElementById('pantalla-pwd');
+      var input    = document.getElementById('pwd-input');
+      var btn      = document.getElementById('pwd-btn');
+      var error    = document.getElementById('pwd-error');
+
+      async function verificar() {
+        var pwd = input.value;
+        if (!pwd) return;
+        btn.disabled = true;
+        btn.textContent = '...';
+        error.textContent = '';
+        try {
+          var resp = await fetch('/api/admin/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pwd: pwd })
+          });
+          if (resp.ok) {
+            pantalla.style.display = 'none';
+          } else {
+            error.textContent = 'Contraseña incorrecta';
+            input.value = '';
+            input.focus();
+          }
+        } catch(e) {
+          error.textContent = 'Error de conexión';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      }
+
+      btn.addEventListener('click', verificar);
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') verificar(); });
+      input.focus();
+    })();
+
+    // ── Cargar zonas ───────────────────────────────────────────────
+    async function cargarZonas() {
+      const sel = document.getElementById('sel-zona');
+      try {
+        const zonas = await fetch('/api/zonas').then(r => r.json());
+
+        const mapGrupo = {
+          'pulmonar':     'Pulmón',
+          'cardiaco':     'Corazón',
+          'grandes':      'Grandes vasos',
+          'morrison':     'Abdomen',
+          'esplenorenal': 'Abdomen',
+          'douglas':      'Abdomen',
+          'venas':        'Venas MMII'
+        };
+        const grupos = {};
+        const orden  = ['Pulmón', 'Corazón', 'Grandes vasos', 'Abdomen', 'Venas MMII'];
+
+        zonas.forEach(z => {
+          const prefijo = Object.keys(mapGrupo).find(p => z.zona.startsWith(p));
+          const grupo   = prefijo ? mapGrupo[prefijo] : 'Otros';
+          if (!grupos[grupo]) grupos[grupo] = [];
+          grupos[grupo].push(z);
+        });
+
+        sel.innerHTML = '<option value="">— Elige una zona —</option>' +
+          [...orden, ...Object.keys(grupos).filter(g => !orden.includes(g))]
+            .filter(g => grupos[g] && grupos[g].length > 0)
+            .map(g =>
+              `<optgroup label="${g}">` +
+              grupos[g].map(z => `<option value="${z.zona}" data-titulo="${z.titulo}">${z.titulo}</option>`).join('') +
+              `</optgroup>`
+            ).join('');
+      } catch {
+        sel.innerHTML = '<option value="">Error cargando zonas</option>';
+      }
+    }
+
+    // ── Archivo seleccionado ───────────────────────────────────────
+    let archivoSeleccionado = null;
+    const dropZone   = document.getElementById('drop-zone');
+    const inpArchivo = document.getElementById('inp-archivo');
+    const archivoNombre = document.getElementById('archivo-nombre');
+    const btnSubir   = document.getElementById('btn-subir');
+
+    function actualizarEstadoBtn() {
+      const zona   = document.getElementById('sel-zona').value;
+      const nombre = document.getElementById('inp-nombre').value.trim();
+      btnSubir.disabled = !zona || !nombre || !archivoSeleccionado;
+    }
+
+    // ── Validar que el archivo sea .mp4 ───────────────────────────
+    function esMp4(f) {
+      if (!f) return false;
+      const nombreOk = /\.mp4$/i.test(f.name);
+      const tipoOk   = f.type === '' || f.type === 'video/mp4';
+      return nombreOk && tipoOk;
+    }
+
+    inpArchivo.addEventListener('change', () => {
+      const f = inpArchivo.files[0];
+      if (!f) return;
+      if (!esMp4(f)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        inpArchivo.value = '';
+        archivoSeleccionado = null;
+        archivoNombre.textContent = '';
+        actualizarEstadoBtn();
+        return;
+      }
+      archivoSeleccionado = f;
+      archivoNombre.textContent = f.name;
+      actualizarEstadoBtn();
+    });
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      if (!esMp4(f)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        return;
+      }
+      archivoSeleccionado = f;
+      archivoNombre.textContent = f.name;
+      actualizarEstadoBtn();
+    });
+
+    document.getElementById('sel-zona').addEventListener('change', actualizarEstadoBtn);
+    document.getElementById('inp-nombre').addEventListener('input', actualizarEstadoBtn);
+
+    // ── Subir vídeo directamente a Cloudinary ─────────────────────
+    btnSubir.addEventListener('click', async () => {
+      const selZona    = document.getElementById('sel-zona');
+      const zona       = selZona.value;
+      const tituloZona = selZona.options[selZona.selectedIndex].dataset.titulo || zona;
+      const nombre     = document.getElementById('inp-nombre').value.trim();
+      const sub        = document.getElementById('inp-sub').value.trim();
+      const patologico = document.getElementById('chk-patologico').checked;
+      const resultado  = document.getElementById('resultado');
+
+      if (!zona || !nombre || !archivoSeleccionado) return;
+
+      if (!esMp4(archivoSeleccionado)) {
+        mostrarResultado('err', 'Solo se permiten vídeos en formato .mp4');
+        return;
+      }
+
+      btnSubir.disabled = true;
+      btnSubir.innerHTML = '<span class="spinner"></span> Preparando...';
+      document.getElementById('progreso-wrap').classList.add('visible');
+      document.getElementById('progreso-bar').style.width = '10%';
+      document.getElementById('progreso-texto').textContent = 'Obteniendo autorización...';
+      resultado.className = 'resultado';
+      resultado.style.display = 'none';
+
+      try {
+        // 1. Pedir firma al servidor
+        const firmaResp = await fetch('/api/admin/firma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, sub, patologico, zona, titulo_zona: tituloZona })
+        });
+        const firma = await firmaResp.json();
+        if (!firma.ok) { mostrarResultado('err', 'Error: ' + firma.error); return; }
+
+        document.getElementById('progreso-bar').style.width = '20%';
+        document.getElementById('progreso-texto').textContent = 'Subiendo vídeo...';
+
+        // 2. Subir directamente a Cloudinary con FormData (sin límite de tamaño)
+        const formData = new FormData();
+        formData.append('file', archivoSeleccionado);
+        formData.append('api_key',   firma.apiKey);
+        formData.append('timestamp', firma.timestamp);
+        formData.append('signature', firma.signature);
+        formData.append('folder',    firma.folder);
+        formData.append('context',   firma.context);
+        formData.append('tags',      firma.tags);
+
+        // Subir con XHR para tener progreso real
+        const cloudResp = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `https://api.cloudinary.com/v1_1/${firma.cloudName}/video/upload`);
+          xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+              const pct = 20 + (e.loaded / e.total) * 70;
+              document.getElementById('progreso-bar').style.width = pct + '%';
+            }
+          };
+          xhr.onload = () => resolve(JSON.parse(xhr.responseText));
+          xhr.onerror = () => reject(new Error('Error de red'));
+          xhr.send(formData);
+        });
+
+        if (cloudResp.error) { mostrarResultado('err', 'Cloudinary: ' + cloudResp.error.message); return; }
+
+        document.getElementById('progreso-bar').style.width = '95%';
+        document.getElementById('progreso-texto').textContent = 'Registrando...';
+
+        // 3. Registrar en memoria del servidor
+        await fetch('/api/admin/registrar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            public_id:   cloudResp.public_id,
+            secure_url:  cloudResp.secure_url,
+            nombre, sub, patologico, zona,
+            titulo_zona: tituloZona
+          })
+        });
+
+        document.getElementById('progreso-bar').style.width = '100%';
+        document.getElementById('progreso-texto').textContent = '¡Subido!';
+        mostrarResultado('ok', '¡Vídeo subido correctamente! Ya está disponible en el panel de control.');
+
+        // Resetear formulario
+        document.getElementById('inp-nombre').value = '';
+        document.getElementById('inp-sub').value = '';
+        document.getElementById('chk-patologico').checked = false;
+        document.getElementById('sel-zona').value = '';
+        archivoNombre.textContent = '';
+        archivoSeleccionado = null;
+        inpArchivo.value = '';
+        actualizarEstadoBtn();
+        cargarListaClips();
+
+      } catch (e) {
+        mostrarResultado('err', 'Error: ' + e.message);
+      } finally {
+        setTimeout(() => {
+          document.getElementById('progreso-wrap').classList.remove('visible');
+          document.getElementById('progreso-bar').style.width = '0%';
+        }, 1500);
+        btnSubir.disabled = false;
+        btnSubir.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Subir vídeo';
+        actualizarEstadoBtn();
+      }
+    });
+
+    function mostrarResultado(tipo, texto) {
+      const el = document.getElementById('resultado');
+      const icono = tipo === 'ok'
+        ? '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      el.innerHTML = icono + texto;
+      el.className = `resultado visible ${tipo}`;
+    }
+
+    // ── Cargar lista de clips en la nube ───────────────────────────
+    // ── Lista de clips con edición y previsualización ────────────────
+    let zonasCache = [];
+
+    async function cargarListaClips() {
+      const lista = document.getElementById('lista-clips');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const zonas = await fetch('/api/clips').then(r => r.json());
+        zonasCache = zonas;
+        const cloudClips = [];
+        zonas.forEach(z => {
+          z.clips.filter(c => c.archivo && c.archivo.includes('cloudinary')).forEach(c => {
+            cloudClips.push({ ...c, zona_id: z.zona, zona_titulo: z.titulo });
+          });
+        });
+
+        const contadorEl = document.getElementById('videos-contador');
+        if (contadorEl) contadorEl.textContent = cloudClips.length;
+
+        if (cloudClips.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">Aún no hay vídeos subidos a la nube.<br>Usa el formulario de arriba para añadir el primero.</div>';
+          return;
+        }
+
+        lista.innerHTML = '';
+        cloudClips.forEach(c => {
+          const item = document.createElement('div');
+          item.className = 'clip-item';
+          item.dataset.id = c.id;
+          item.innerHTML = `
+            <div class="clip-thumb">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M10 8l4 3-4 3V8z"/></svg>
+            </div>
+            <div class="clip-meta">
+              <div class="clip-meta-nombre">${c.nombre}</div>
+              <div class="clip-meta-sub">${c.zona_titulo}${c.sub ? ' · ' + c.sub : ''}</div>
+            </div>
+            <span class="badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
+            <div class="clip-acciones">
+              <button class="btn-preview" title="Vista previa">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l4 3-4 3V8z" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <button class="btn-editar" title="Editar">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn-borrar" title="Eliminar">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+              </button>
+            </div>
+            <div class="clip-edit-panel">
+              <div class="edit-row">
+                <div class="edit-campo">
+                  <label>Nombre</label>
+                  <input type="text" class="edit-nombre" value="${c.nombre}">
+                </div>
+                <div class="edit-campo">
+                  <label>Descripción</label>
+                  <input type="text" class="edit-sub" value="${c.sub || ''}">
+                </div>
+              </div>
+              <div class="edit-row">
+                <div class="edit-campo">
+                  <label>Zona anatómica</label>
+                  <select class="edit-zona">${zonasCache.map(z => `<option value="${z.zona}" data-titulo="${z.titulo}" ${z.zona === c.zona_id ? 'selected' : ''}>${z.titulo}</option>`).join('')}</select>
+                </div>
+                <div class="edit-campo" style="justify-content:flex-end;flex-direction:row;align-items:center;gap:8px;">
+                  <label style="font-size:13px;color:var(--text);margin:0;">Patológico</label>
+                  <label class="toggle" style="margin:0;">
+                    <input type="checkbox" class="edit-patologico" ${c.patologico ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div class="edit-acciones">
+                <span class="edit-msg"></span>
+                <button class="btn-cancelar-edit">Cancelar</button>
+                <button class="btn-guardar">Guardar</button>
+              </div>
+            </div>
+          `;
+
+          // Vista previa
+          item.querySelector('.btn-preview').addEventListener('click', () => abrirPreview(c.archivo));
+
+          // Toggle edición
+          item.querySelector('.btn-editar').addEventListener('click', () => {
+            const panel = item.querySelector('.clip-edit-panel');
+            panel.classList.toggle('visible');
+          });
+          item.querySelector('.btn-cancelar-edit').addEventListener('click', () => {
+            item.querySelector('.clip-edit-panel').classList.remove('visible');
+          });
+
+          // Guardar edición
+          item.querySelector('.btn-guardar').addEventListener('click', async () => {
+            const nombre    = item.querySelector('.edit-nombre').value.trim();
+            const sub       = item.querySelector('.edit-sub').value.trim();
+            const selZona   = item.querySelector('.edit-zona');
+            const zona      = selZona.value;
+            const tituloZona = selZona.options[selZona.selectedIndex].dataset.titulo || zona;
+            const patologico = item.querySelector('.edit-patologico').checked;
+            const msg        = item.querySelector('.edit-msg');
+
+            if (!nombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+
+            msg.textContent = 'Guardando...';
+            msg.className = 'edit-msg';
+
+            try {
+              const resp = await fetch('/api/admin/editar/' + encodeURIComponent(c.id), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre, sub, patologico, zona, titulo_zona: tituloZona })
+              });
+              const json = await resp.json();
+              if (json.ok) {
+                msg.textContent = '¡Guardado!';
+                msg.className = 'edit-msg ok';
+                setTimeout(() => cargarListaClips(), 800);
+              } else {
+                msg.textContent = 'Error: ' + json.error;
+                msg.className = 'edit-msg err';
+              }
+            } catch (e) {
+              msg.textContent = 'Error de conexión';
+              msg.className = 'edit-msg err';
+            }
+          });
+
+          // Borrar
+          item.querySelector('.btn-borrar').addEventListener('click', () => borrarClip(c.id));
+
+          lista.appendChild(item);
+        });
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando la lista.</div>';
+      }
+    }
+
+    function abrirPreview(url) {
+      const modal = document.getElementById('preview-modal');
+      const video = document.getElementById('preview-video');
+      video.src = url;
+      video.play().catch(() => {});
+      modal.classList.add('visible');
+    }
+
+    document.getElementById('preview-close').addEventListener('click', () => {
+      const modal = document.getElementById('preview-modal');
+      const video = document.getElementById('preview-video');
+      video.pause();
+      video.src = '';
+      modal.classList.remove('visible');
+    });
+
+    document.getElementById('preview-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('preview-modal')) {
+        document.getElementById('preview-close').click();
+      }
+    });
+
+    async function borrarClip(publicId) {
+      if (!confirm('¿Eliminar este vídeo? Esta acción no se puede deshacer.')) return;
+      try {
+        const resp = await fetch('/api/admin/borrar/' + encodeURIComponent(publicId), { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) cargarListaClips();
+        else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
+    document.getElementById('btn-refrescar').addEventListener('click', cargarListaClips);
+
+    // ── Tabs de casos clínicos ─────────────────────────────────────
+    document.getElementById('tab-lista-btn').addEventListener('click', () => {
+      document.getElementById('tab-lista-btn').classList.add('activa');
+      document.getElementById('tab-nuevo-btn').classList.remove('activa');
+      document.getElementById('tab-lista').classList.add('visible');
+      document.getElementById('tab-nuevo').classList.remove('visible');
+    });
+    document.getElementById('tab-nuevo-btn').addEventListener('click', () => {
+      document.getElementById('tab-nuevo-btn').classList.add('activa');
+      document.getElementById('tab-lista-btn').classList.remove('activa');
+      document.getElementById('tab-nuevo').classList.add('visible');
+      document.getElementById('tab-lista').classList.remove('visible');
+      poblarSelectorClips();
+    });
+
+    // ── Cargar lista de casos ──────────────────────────────────────
+    async function cargarListaCasos() {
+      const lista = document.getElementById('lista-casos');
+      const contadorEl = document.getElementById('casos-contador');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const casos = await fetch('/api/admin/casos').then(r => r.json());
+        if (contadorEl) contadorEl.textContent = casos.length + (casos.length === 1 ? ' caso' : ' casos');
+        if (casos.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">No hay casos clínicos guardados.<br>Usa la pestaña "+ Nuevo caso" para crear uno.</div>';
+          return;
+        }
+        lista.innerHTML = '';
+        casos.forEach(caso => {
+          const item = document.createElement('div');
+          item.className = 'caso-item';
+          item.innerHTML = `
+            <div class="caso-header">
+              <div class="caso-dot"></div>
+              <div class="caso-meta">
+                <div class="caso-nombre">${caso.nombre}</div>
+                ${caso.descripcion ? `<div class="caso-desc">${caso.descripcion}</div>` : ''}
+              </div>
+              <div class="caso-acciones">
+                <button class="btn-info-caso" title="Ver clips">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.5" fill="currentColor" stroke="none"/></svg>
+                </button>
+                <button class="btn-editar-caso" title="Editar caso">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button class="btn-borrar btn-borrar-caso" title="Eliminar caso">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="caso-clips-lista">
+              ${caso.clips.map(c => `
+                <div class="caso-clip-row">
+                  <span class="caso-clip-zona">${c.zona_titulo || c.zona}</span>
+                  <span class="caso-clip-nombre">${c.nombre}</span>
+                  <span class="clip-check-badge ${c.patologico ? 'badge-p' : 'badge-n'}">${c.patologico ? 'Patológico' : 'Normal'}</span>
+                </div>`).join('')}
+            </div>
+            <div class="caso-edit-panel">
+              <div class="campo" style="margin-bottom:0">
+                <label>Nombre del caso</label>
+                <input type="text" class="edit-caso-nombre" value="${caso.nombre}">
+              </div>
+              <div class="campo" style="margin-bottom:8px">
+                <label>Descripción (opcional)</label>
+                <input type="text" class="edit-caso-desc" value="${caso.descripcion || ''}">
+              </div>
+              <div class="campo" style="margin-bottom:0">
+                <label>Clips del caso</label>
+                <div class="clips-selector edit-clips-selector">
+                  <div class="lista-vacia" style="padding:10px">Cargando clips...</div>
+                </div>
+              </div>
+              <div class="edit-acciones" style="margin-top:10px">
+                <span class="edit-msg caso-edit-msg"></span>
+                <button class="btn-cancelar-edit btn-cancelar-caso">Cancelar</button>
+                <button class="btn-guardar btn-guardar-caso-edit">Guardar</button>
+              </div>
+            </div>
+          `;
+
+          // Botón info: mostrar/ocultar lista de clips
+          item.querySelector('.btn-info-caso').addEventListener('click', () => {
+            item.querySelector('.caso-clips-lista').classList.toggle('visible');
+            item.querySelector('.caso-edit-panel').classList.remove('visible');
+          });
+
+          // Botón editar: mostrar/ocultar panel de edición y poblar clips
+          item.querySelector('.btn-editar-caso').addEventListener('click', async () => {
+            const panel = item.querySelector('.caso-edit-panel');
+            const yaVisible = panel.classList.contains('visible');
+            panel.classList.toggle('visible');
+            item.querySelector('.caso-clips-lista').classList.remove('visible');
+            if (!yaVisible) {
+              // Poblar selector de clips con los del caso ya marcados
+              const selector = item.querySelector('.edit-clips-selector');
+              selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Cargando...</div>';
+              try {
+                const zonas = await fetch('/api/clips').then(r => r.json());
+                const idsActuales = new Set(caso.clips.map(c => c.id));
+                construirAcordeonClips(selector, zonas, idsActuales);
+              } catch(e) {
+                selector.innerHTML = '<div class="lista-vacia" style="padding:10px">Error cargando clips.</div>';
+              }
+            }
+          });
+
+          // Cancelar edición
+          item.querySelector('.btn-cancelar-caso').addEventListener('click', () => {
+            item.querySelector('.caso-edit-panel').classList.remove('visible');
+          });
+
+          // Guardar edición
+          item.querySelector('.btn-guardar-caso-edit').addEventListener('click', async () => {
+            const nuevoNombre = item.querySelector('.edit-caso-nombre').value.trim();
+            const nuevaDesc   = item.querySelector('.edit-caso-desc').value.trim();
+            const msg         = item.querySelector('.caso-edit-msg');
+            if (!nuevoNombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+            // Recoger clips seleccionados
+            const checkboxes = item.querySelectorAll('.edit-clips-selector input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) { msg.textContent = 'Selecciona al menos un clip'; msg.className = 'edit-msg err'; return; }
+            const nuevosClips = Array.from(checkboxes).map(cb => ({
+              id: cb.dataset.id, zona: cb.dataset.zona, zona_titulo: cb.dataset.zonaTitulo,
+              nombre: cb.dataset.nombre, archivo: cb.dataset.archivo,
+              patologico: cb.dataset.patologico === 'true', sub: cb.dataset.sub || ''
+            }));
+            msg.textContent = 'Guardando...'; msg.className = 'edit-msg';
+            try {
+              const resp = await fetch('/api/admin/casos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: caso.id, nombre: nuevoNombre, descripcion: nuevaDesc, clips: nuevosClips })
+              });
+              const json = await resp.json();
+              if (json.ok) {
+                msg.textContent = '¡Guardado!'; msg.className = 'edit-msg ok';
+                setTimeout(() => cargarListaCasos(), 800);
+              } else {
+                msg.textContent = 'Error: ' + json.error; msg.className = 'edit-msg err';
+              }
+            } catch(e) {
+              msg.textContent = 'Error de conexión'; msg.className = 'edit-msg err';
+            }
+          });
+
+          item.querySelector('.btn-borrar-caso').addEventListener('click', () => borrarCaso(caso.id));
+          lista.appendChild(item);
+        });
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando los casos.</div>';
+      }
+    }
+
+    // ── Poblar selector de clips para nuevo caso ──────────────────
+    // ── Acordeón de clips (compartido: crear y editar) ────────────
+    // Construye el HTML de un acordeón por zonas dentro de `selector`.
+    // idsMarcados: Set con los ids de clips que deben salir marcados.
+    function construirAcordeonClips(selector, zonas, idsMarcados) {
+      idsMarcados = idsMarcados || new Set();
+      selector.innerHTML = '';
+      let hayZonas = false;
+      zonas.forEach(z => {
+        if (!z.clips || z.clips.length === 0) return;
+        hayZonas = true;
+        const grupo = document.createElement('div');
+        grupo.className = 'zona-grupo';
+
+        const chevron = '<svg class="zona-chevron" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+        const filas = z.clips.map(c => {
+          const marcado = idsMarcados.has(c.id) ? 'checked' : '';
+          return '<label class="clip-check-row">' +
+            '<input type="checkbox" ' + marcado + ' data-id="' + c.id + '" data-zona="' + z.zona + '" data-zona-titulo="' + z.titulo + '" data-nombre="' + c.nombre + '" data-archivo="' + c.archivo + '" data-patologico="' + c.patologico + '" data-sub="' + (c.sub || '') + '">' +
+            '<span class="clip-check-nombre">' + c.nombre + '</span>' +
+            '<span class="clip-check-badge ' + (c.patologico ? 'badge-p' : 'badge-n') + '">' + (c.patologico ? 'Patológico' : 'Normal') + '</span>' +
+            '</label>';
+        }).join('');
+
+        grupo.innerHTML =
+          '<div class="zona-grupo-titulo">' +
+            chevron +
+            '<span class="zona-nombre">' + z.titulo + '</span>' +
+            '<span class="zona-contador">0</span>' +
+          '</div>' +
+          '<div class="zona-grupo-clips">' + filas + '</div>';
+
+        // Abrir/cerrar al pulsar la cabecera
+        grupo.querySelector('.zona-grupo-titulo').addEventListener('click', () => {
+          grupo.classList.toggle('abierta');
+        });
+
+        // Actualizar contador de la zona al marcar/desmarcar
+        grupo.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+          cb.addEventListener('change', () => actualizarContadorZona(grupo));
+        });
+
+        selector.appendChild(grupo);
+        actualizarContadorZona(grupo);   // por si vienen ya marcados (editar)
+        // Si la zona trae algún clip ya marcado (modo editar), la abrimos
+        if (grupo.querySelector('input[type="checkbox"]:checked')) {
+          grupo.classList.add('abierta');
+        }
+      });
+
+      if (!hayZonas) {
+        selector.innerHTML = '<div class="lista-vacia" style="padding:10px">No hay vídeos disponibles todavía. Sube alguno desde el formulario de abajo.</div>';
+      }
+    }
+
+    function actualizarContadorZona(grupo) {
+      const marcados = grupo.querySelectorAll('input[type="checkbox"]:checked').length;
+      const cont = grupo.querySelector('.zona-contador');
+      cont.textContent = marcados;
+      cont.classList.toggle('tiene', marcados > 0);
+    }
+
+    async function poblarSelectorClips() {
+      const selector = document.getElementById('clips-selector');
+      selector.innerHTML = '<div class="lista-vacia">Cargando clips...</div>';
+      try {
+        const zonas = await fetch('/api/clips').then(r => r.json());
+        construirAcordeonClips(selector, zonas, new Set());
+      } catch (e) {
+        selector.innerHTML = '<div class="lista-vacia">Error cargando clips.</div>';
+      }
+    }
+
+    // ── Guardar nuevo caso ────────────────────────────────────────
+    document.getElementById('btn-guardar-caso').addEventListener('click', async () => {
+      const nombre      = document.getElementById('caso-nombre').value.trim();
+      const descripcion = document.getElementById('caso-desc').value.trim();
+      const msg         = document.getElementById('caso-msg');
+
+      if (!nombre) { msg.textContent = 'El nombre no puede estar vacío'; msg.className = 'edit-msg err'; return; }
+
+      const checkboxes = document.querySelectorAll('#clips-selector input[type="checkbox"]:checked');
+      if (checkboxes.length === 0) { msg.textContent = 'Selecciona al menos un clip'; msg.className = 'edit-msg err'; return; }
+
+      const clips = Array.from(checkboxes).map(cb => ({
+        id:          cb.dataset.id,
+        zona:        cb.dataset.zona,
+        zona_titulo: cb.dataset.zonaTitulo,
+        nombre:      cb.dataset.nombre,
+        archivo:     cb.dataset.archivo,
+        patologico:  cb.dataset.patologico === 'true',
+        sub:         cb.dataset.sub || ''
+      }));
+
+      msg.textContent = 'Guardando...';
+      msg.className = 'edit-msg';
+
+      try {
+        const resp = await fetch('/api/admin/casos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre, descripcion, clips })
+        });
+        const json = await resp.json();
+        if (json.ok) {
+          msg.textContent = '¡Caso guardado!';
+          msg.className = 'edit-msg ok';
+          document.getElementById('caso-nombre').value = '';
+          document.getElementById('caso-desc').value = '';
+          poblarSelectorClips();   // reinicia checkboxes, contadores y acordeón
+          setTimeout(() => {
+            document.getElementById('tab-lista-btn').click();
+            document.getElementById('card-casos-lista').classList.add('abierta');
+            cargarListaCasos();
+            msg.textContent = '';
+          }, 800);
+        } else {
+          msg.textContent = 'Error: ' + json.error;
+          msg.className = 'edit-msg err';
+        }
+      } catch (e) {
+        msg.textContent = 'Error de conexión';
+        msg.className = 'edit-msg err';
+      }
+    });
+
+    // ── Borrar caso ───────────────────────────────────────────────
+    async function borrarCaso(casoId) {
+      if (!confirm('¿Eliminar este caso clínico? Esta acción no se puede deshacer.')) return;
+      try {
+        const resp = await fetch('/api/admin/casos/' + encodeURIComponent(casoId), { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) cargarListaCasos();
+        else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
+
+    // ── Desplegable de vídeos en la nube ──────────────────────────
+    document.getElementById('videos-toggle').addEventListener('click', () => {
+      document.getElementById('card-videos').classList.toggle('abierta');
+    });
+
+    // ── Desplegable de casos clínicos guardados ───────────────────
+    document.getElementById('casos-toggle').addEventListener('click', () => {
+      document.getElementById('card-casos-lista').classList.toggle('abierta');
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // ── PROTOCOLOS ─────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    const NIVEL_TXT = { basico: 'Básico', medio: 'Medio', avanzado: 'Avanzado' };
+    const TIPO_TXT  = { entrenamiento: 'Entrenamiento', simulacion: 'Solo simulación' };
+
+    const SVG_ARRIBA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+    const SVG_ABAJO  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    const SVG_LAPIZ  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    const SVG_PAPELERA = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
+    const SVG_CHECK  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const SVG_CRUZ   = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    const SVG_PIN    = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+    const SVG_INFO   = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.5" fill="currentColor" stroke="none"/></svg>';
+
+    let protoZonas      = [];   // [{ zona, titulo }]
+    let protoCasos      = [];   // casos clínicos (para vincular)
+    let protoPasos      = [];   // pasos del formulario: [{ id, texto, zona }]
+    let protoEditandoId = null; // id del protocolo en edición, o null si es nuevo
+    let pasoEditandoIdx = -1;   // índice del paso que se está editando en línea
+
+    // Escapa texto para meterlo en HTML sin romper atributos (comillas, <, etc.)
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function tituloZona(zona) {
+      const z = protoZonas.find(x => x.zona === zona);
+      return z ? z.titulo : zona;
+    }
+
+    function opcionesZona(seleccionada) {
+      return '<option value="">Sin zona de la silueta</option>' +
+        protoZonas.map(z => `<option value="${esc(z.zona)}" ${z.zona === seleccionada ? 'selected' : ''}>${esc(z.titulo)}</option>`).join('');
+    }
+
+    async function cargarDatosProtocolo() {
+      try { protoZonas = await fetch('/api/zonas').then(r => r.json()); } catch (e) { protoZonas = []; }
+      montarEditorNuevo();
+      await refrescarCasosProtocolo();
+    }
+
+    async function refrescarCasosProtocolo() {
+      const sel = document.getElementById('proto-caso');
+      const actual = sel.value;
+      try { protoCasos = await fetch('/api/admin/casos').then(r => r.json()); } catch (e) { protoCasos = []; }
+      sel.innerHTML = '<option value="">— Ninguno —</option>' +
+        protoCasos.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+      sel.value = protoCasos.some(c => c.id === actual) ? actual : '';
+    }
+
+    // ── Selectores segmentados (nivel / tipo) ──────────────────────
+    function valorSeg(id) {
+      const b = document.querySelector(`#${id} .seg-btn.activa`);
+      return b ? b.dataset.valor : null;
+    }
+    function ponerSeg(id, valor) {
+      document.querySelectorAll(`#${id} .seg-btn`).forEach(b => b.classList.toggle('activa', b.dataset.valor === valor));
+    }
+    ['proto-nivel', 'proto-tipo'].forEach(id => {
+      document.querySelectorAll(`#${id} .seg-btn`).forEach(b => {
+        b.addEventListener('click', () => ponerSeg(id, b.dataset.valor));
+      });
+    });
+
+    // ── Diagnóstico final: mostrar campos al activarlo ────────────
+    function syncSubBloques() {
+      document.getElementById('proto-diag-bloque').classList.toggle('visible', document.getElementById('proto-ev-diag').checked);
+    }
+    document.getElementById('proto-ev-diag').addEventListener('change', syncSubBloques);
+
+    // ── Editor de paso (se usa para "Nuevo paso" y para editar) ───
+    // Texto + zona + ventana (opcional) + hallazgo (opcional).
+    function crearEditorPaso(p) {
+      p = p || {};
+      const v = p.ventana  || {};
+      const h = p.hallazgo || {};
+      const el = document.createElement('div');
+      el.className = 'pe';
+      el.innerHTML = `
+        <input type="text" class="pe-texto" placeholder="Ej: Colocar la sonda en el espacio de Morrison" value="${esc(p.texto)}">
+        <select class="pe-zona">${opcionesZona(p.zona)}</select>
+        <div class="pe-eval">
+          <div class="pe-fila">
+            <span>Evaluar ventana</span>
+            <label class="toggle"><input type="checkbox" class="pe-v-on" ${v.evaluar ? 'checked' : ''}><span class="toggle-slider"></span></label>
+          </div>
+          <div class="pe-sub pe-v-sub ${v.evaluar ? 'visible' : ''}">
+            <input type="text" class="pe-v-txt" placeholder="Ventana correcta. Ej: Hepatorrenal" value="${esc(v.esperada)}">
+            <label class="pe-oblig"><input type="checkbox" class="pe-v-ob" ${v.evaluar ? (v.obligatoria ? 'checked' : '') : 'checked'}> Imprescindible para superar</label>
+          </div>
+          <div class="pe-fila">
+            <span>Evaluar hallazgo</span>
+            <label class="toggle"><input type="checkbox" class="pe-h-on" ${h.evaluar ? 'checked' : ''}><span class="toggle-slider"></span></label>
+          </div>
+          <div class="pe-sub pe-h-sub ${h.evaluar ? 'visible' : ''}">
+            <input type="text" class="pe-h-txt" placeholder="Hallazgo esperado. Ej: Líquido libre" value="${esc(h.esperado)}">
+            <label class="pe-oblig"><input type="checkbox" class="pe-h-ob" ${h.evaluar ? (h.obligatorio ? 'checked' : '') : ''}> Imprescindible para superar</label>
+          </div>
+        </div>
+        <div class="pe-err"></div>`;
+      el.querySelector('.pe-v-on').addEventListener('change', e => {
+        el.querySelector('.pe-v-sub').classList.toggle('visible', e.target.checked);
+        if (e.target.checked) el.querySelector('.pe-v-txt').focus();
+      });
+      el.querySelector('.pe-h-on').addEventListener('change', e => {
+        el.querySelector('.pe-h-sub').classList.toggle('visible', e.target.checked);
+        if (e.target.checked) el.querySelector('.pe-h-txt').focus();
+      });
+      return el;
+    }
+
+    // Lee y valida un editor. Devuelve el paso o null (y pinta el error).
+    function leerEditorPaso(el, idExistente) {
+      const err = el.querySelector('.pe-err');
+      const q = s => el.querySelector(s);
+      const texto = q('.pe-texto').value.trim();
+      const vOn = q('.pe-v-on').checked, hOn = q('.pe-h-on').checked;
+      const vTxt = q('.pe-v-txt').value.trim(), hTxt = q('.pe-h-txt').value.trim();
+      err.textContent = '';
+      if (!texto)       { err.textContent = 'Escribe qué tiene que hacer el alumno en este paso'; q('.pe-texto').focus(); return null; }
+      if (vOn && !vTxt) { err.textContent = 'Indica cuál es la ventana correcta'; q('.pe-v-txt').focus(); return null; }
+      if (hOn && !hTxt) { err.textContent = 'Indica el hallazgo esperado'; q('.pe-h-txt').focus(); return null; }
+      return {
+        id: idExistente || 'paso-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        texto,
+        zona: q('.pe-zona').value || null,
+        ventana:  vOn ? { evaluar: true, esperada: vTxt, obligatoria: q('.pe-v-ob').checked } : { evaluar: false },
+        hallazgo: hOn ? { evaluar: true, esperado: hTxt, obligatorio: q('.pe-h-ob').checked } : { evaluar: false }
+      };
+    }
+
+    // Etiquetas "Ventana: X ★" / "Hallazgo: Y" para mostrar bajo un paso
+    function htmlEvalsPaso(p) {
+      const tags = [];
+      if (p.ventana && p.ventana.evaluar)
+        tags.push(`<span class="paso-eval ${p.ventana.obligatoria ? 'imprescindible' : ''}"><b>Ventana:</b> ${esc(p.ventana.esperada)}</span>`);
+      if (p.hallazgo && p.hallazgo.evaluar)
+        tags.push(`<span class="paso-eval ${p.hallazgo.obligatorio ? 'imprescindible' : ''}"><b>Hallazgo:</b> ${esc(p.hallazgo.esperado)}</span>`);
+      return tags.length ? `<div class="paso-evals">${tags.join('')}</div>` : '';
+    }
+
+    let editorNuevo = null;
+    function montarEditorNuevo() {
+      const cont = document.getElementById('paso-nuevo-editor');
+      cont.innerHTML = '';
+      editorNuevo = crearEditorPaso({});
+      cont.appendChild(editorNuevo);
+      editorNuevo.querySelector('.pe-texto').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); anadirPaso(); }
+      });
+    }
+
+    // ── Checklist: pintar, añadir, mover, editar, borrar ──────────
+    function renderPasos() {
+      const cont = document.getElementById('proto-pasos');
+      if (protoPasos.length === 0) {
+        cont.innerHTML = '<div class="lista-vacia" style="padding:14px">Todavía no hay pasos. Añade el primero aquí abajo.</div>';
+        return;
+      }
+      cont.innerHTML = '';
+      protoPasos.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'paso-row';
+
+        if (i === pasoEditandoIdx) {
+          row.innerHTML = `<span class="paso-num">${i + 1}</span><div class="paso-edit"></div>
+            <div class="paso-acciones">
+              <button type="button" class="btn-icono" data-acc="ok" title="Guardar paso">${SVG_CHECK}</button>
+              <button type="button" class="btn-icono" data-acc="cancelar" title="Cancelar">${SVG_CRUZ}</button>
+            </div>`;
+          const editor = crearEditorPaso(p);
+          row.querySelector('.paso-edit').appendChild(editor);
+          const confirmar = () => {
+            const paso = leerEditorPaso(editor, p.id);
+            if (!paso) return;
+            protoPasos[i] = paso;
+            pasoEditandoIdx = -1;
+            renderPasos();
+          };
+          row.querySelector('[data-acc="ok"]').addEventListener('click', confirmar);
+          row.querySelector('[data-acc="cancelar"]').addEventListener('click', () => { pasoEditandoIdx = -1; renderPasos(); });
+          editor.querySelector('.pe-texto').addEventListener('keydown', e => { if (e.key === 'Enter') confirmar(); });
+          cont.appendChild(row);
+          setTimeout(() => editor.querySelector('.pe-texto').focus(), 0);
+          return;
+        }
+
+        const zonaHtml = p.zona
+          ? `<span class="paso-zona">${SVG_PIN}${esc(tituloZona(p.zona))}</span>`
+          : `<span class="paso-zona sin-zona">Lo marca el instructor</span>`;
+        row.innerHTML = `
+          <span class="paso-num">${i + 1}</span>
+          <div class="paso-cuerpo">
+            <div class="paso-texto">${esc(p.texto)}</div>
+            ${zonaHtml}
+            ${htmlEvalsPaso(p)}
+          </div>
+          <div class="paso-acciones">
+            <button type="button" class="btn-icono" data-acc="subir" title="Subir" ${i === 0 ? 'disabled' : ''}>${SVG_ARRIBA}</button>
+            <button type="button" class="btn-icono" data-acc="bajar" title="Bajar" ${i === protoPasos.length - 1 ? 'disabled' : ''}>${SVG_ABAJO}</button>
+            <button type="button" class="btn-icono" data-acc="editar" title="Editar">${SVG_LAPIZ}</button>
+            <button type="button" class="btn-icono peligro" data-acc="borrar" title="Borrar">${SVG_PAPELERA}</button>
+          </div>`;
+
+        row.querySelector('[data-acc="subir"]').addEventListener('click', () => moverPaso(i, -1));
+        row.querySelector('[data-acc="bajar"]').addEventListener('click', () => moverPaso(i, +1));
+        row.querySelector('[data-acc="editar"]').addEventListener('click', () => { pasoEditandoIdx = i; renderPasos(); });
+        row.querySelector('[data-acc="borrar"]').addEventListener('click', () => {
+          if (!confirm(`¿Borrar el paso ${i + 1}?`)) return;
+          protoPasos.splice(i, 1);
+          pasoEditandoIdx = -1;
+          renderPasos();
+        });
+        cont.appendChild(row);
+      });
+    }
+
+    function moverPaso(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= protoPasos.length) return;
+      [protoPasos[i], protoPasos[j]] = [protoPasos[j], protoPasos[i]];
+      pasoEditandoIdx = -1;
+      renderPasos();
+    }
+
+    function anadirPaso() {
+      const paso = leerEditorPaso(editorNuevo);
+      if (!paso) return;
+      protoPasos.push(paso);
+      renderPasos();
+      montarEditorNuevo();   // editor limpio para el siguiente paso
+      editorNuevo.querySelector('.pe-texto').focus();
+    }
+    document.getElementById('btn-anadir-paso').addEventListener('click', anadirPaso);
+
+    // ── Formulario: leer / rellenar / limpiar ──────────────────────
+    function leerFormularioProtocolo() {
+      return {
+        id:          protoEditandoId || undefined,
+        nombre:      document.getElementById('proto-nombre').value.trim(),
+        descripcion: document.getElementById('proto-desc').value.trim(),
+        casoId:      document.getElementById('proto-caso').value || null,
+        nivel:       valorSeg('proto-nivel'),
+        tipo:        valorSeg('proto-tipo'),
+        ordenObligatorio: document.getElementById('proto-orden').checked,
+        pasos:       protoPasos.map(p => ({ id: p.id, texto: p.texto, zona: p.zona, ventana: p.ventana, hallazgo: p.hallazgo })),
+        evaluacion: {
+          diagnostico: {
+            evaluar:     document.getElementById('proto-ev-diag').checked,
+            esperado:    document.getElementById('proto-diag-esperado').value.trim(),
+            obligatorio: document.getElementById('proto-diag-oblig').checked
+          }
+        },
+        criterios: {
+          porcentajeMinimo: document.getElementById('proto-porcentaje').value,
+          tiempoMaxMin:     document.getElementById('proto-tiempo').value || null
+        }
+      };
+    }
+
+    function rellenarFormularioProtocolo(p) {
+      const d  = (p.evaluacion || {}).diagnostico || {};
+      const cr = p.criterios || {};
+      document.getElementById('proto-nombre').value = p.nombre || '';
+      document.getElementById('proto-desc').value   = p.descripcion || '';
+      document.getElementById('proto-caso').value   = protoCasos.some(c => c.id === p.casoId) ? p.casoId : '';
+      ponerSeg('proto-nivel', p.nivel || 'basico');
+      ponerSeg('proto-tipo',  p.tipo  || 'entrenamiento');
+      document.getElementById('proto-orden').checked = p.ordenObligatorio !== false;
+      protoPasos = (p.pasos || []).map(x => JSON.parse(JSON.stringify(x)));
+      pasoEditandoIdx = -1;
+      document.getElementById('proto-ev-diag').checked          = !!d.evaluar;
+      document.getElementById('proto-diag-esperado').value      = d.esperado || '';
+      document.getElementById('proto-diag-oblig').checked       = d.evaluar ? d.obligatorio !== false : true;
+      document.getElementById('proto-porcentaje').value = cr.porcentajeMinimo != null ? cr.porcentajeMinimo : 80;
+      document.getElementById('proto-tiempo').value     = cr.tiempoMaxMin || '';
+      syncSubBloques();
+      renderPasos();
+    }
+
+    function limpiarFormularioProtocolo() {
+      protoEditandoId = null;
+      rellenarFormularioProtocolo({ nivel: 'basico', tipo: 'entrenamiento', ordenObligatorio: true, pasos: [] });
+      montarEditorNuevo();
+      document.getElementById('proto-msg').textContent  = '';
+      document.getElementById('proto-editando-aviso').classList.remove('visible');
+      document.getElementById('proto-tab-form-btn').textContent = '+ Nuevo protocolo';
+      document.getElementById('btn-guardar-proto').textContent  = 'Guardar protocolo';
+    }
+
+    // ── Pestañas ───────────────────────────────────────────────────
+    function mostrarTabProtocolos(cual) {
+      const lista = cual === 'lista';
+      document.getElementById('proto-tab-lista-btn').classList.toggle('activa', lista);
+      document.getElementById('proto-tab-form-btn').classList.toggle('activa', !lista);
+      document.getElementById('proto-tab-lista').classList.toggle('visible', lista);
+      document.getElementById('proto-tab-form').classList.toggle('visible', !lista);
+    }
+    document.getElementById('proto-tab-lista-btn').addEventListener('click', () => mostrarTabProtocolos('lista'));
+    document.getElementById('proto-tab-form-btn').addEventListener('click', () => {
+      refrescarCasosProtocolo();   // por si se ha creado un caso nuevo en esta misma visita
+      mostrarTabProtocolos('form');
+    });
+    document.getElementById('btn-cancelar-proto').addEventListener('click', () => {
+      limpiarFormularioProtocolo();
+      mostrarTabProtocolos('lista');
+    });
+    document.getElementById('protocolos-toggle').addEventListener('click', () => {
+      document.getElementById('card-protocolos-lista').classList.toggle('abierta');
+    });
+
+    // ── Guardar ────────────────────────────────────────────────────
+    document.getElementById('btn-guardar-proto').addEventListener('click', async () => {
+      const msg  = document.getElementById('proto-msg');
+      const btn  = document.getElementById('btn-guardar-proto');
+      if (pasoEditandoIdx !== -1) { msg.textContent = 'Termina de editar el paso abierto'; msg.className = 'edit-msg err'; return; }
+      if (editorNuevo && editorNuevo.querySelector('.pe-texto').value.trim()) {
+        msg.textContent = 'Tienes un paso sin añadir: pulsa "Añadir paso" o bórralo'; msg.className = 'edit-msg err'; return;
+      }
+      const datos = leerFormularioProtocolo();
+      if (!datos.nombre)           { msg.textContent = 'El protocolo necesita un nombre'; msg.className = 'edit-msg err'; return; }
+      if (datos.pasos.length === 0){ msg.textContent = 'Añade al menos un paso al checklist'; msg.className = 'edit-msg err'; return; }
+      if (datos.evaluacion.diagnostico.evaluar && !datos.evaluacion.diagnostico.esperado) {
+        msg.textContent = 'Indica el diagnóstico esperado'; msg.className = 'edit-msg err'; return;
+      }
+
+      msg.textContent = 'Guardando...'; msg.className = 'edit-msg';
+      btn.disabled = true;
+      try {
+        const resp = await fetch('/api/admin/protocolos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        const json = await resp.json();
+        if (json.ok) {
+          msg.textContent = '¡Protocolo guardado!'; msg.className = 'edit-msg ok';
+          setTimeout(() => {
+            limpiarFormularioProtocolo();
+            mostrarTabProtocolos('lista');
+            document.getElementById('card-protocolos-lista').classList.add('abierta');
+            cargarListaProtocolos();
+          }, 700);
+        } else {
+          msg.textContent = 'Error: ' + json.error; msg.className = 'edit-msg err';
+        }
+      } catch (e) {
+        msg.textContent = 'Error de conexión'; msg.className = 'edit-msg err';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ── Lista de protocolos guardados ─────────────────────────────
+    async function cargarListaProtocolos() {
+      const lista = document.getElementById('lista-protocolos');
+      const contador = document.getElementById('protocolos-contador');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const protocolos = await fetch('/api/admin/protocolos').then(r => r.json());
+        contador.textContent = protocolos.length + (protocolos.length === 1 ? ' protocolo' : ' protocolos');
+        if (protocolos.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">No hay protocolos guardados.<br>Usa la pestaña "+ Nuevo protocolo" para crear uno.</div>';
+          return;
+        }
+        lista.innerHTML = '';
+        protocolos
+          .slice()
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+          .forEach(p => lista.appendChild(itemProtocolo(p)));
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando los protocolos.</div>';
+      }
+    }
+
+    function itemProtocolo(p) {
+      const caso = p.casoId ? protoCasos.find(c => c.id === p.casoId) : null;
+      const ev = p.evaluacion || {};
+      const cr = p.criterios || {};
+      const nPasos = (p.pasos || []).length;
+
+      const evaluaciones = [];
+      if (ev.diagnostico && ev.diagnostico.evaluar)
+        evaluaciones.push(`Diagnóstico final: <strong>${esc(ev.diagnostico.esperado)}</strong>${ev.diagnostico.obligatorio ? ' (imprescindible)' : ''}`);
+
+      const item = document.createElement('div');
+      item.className = 'caso-item';
+      item.innerHTML = `
+        <div class="caso-header">
+          <div class="caso-dot proto-dot"></div>
+          <div class="caso-meta">
+            <div class="caso-nombre">${esc(p.nombre)}</div>
+            <div class="caso-desc">${nPasos} ${nPasos === 1 ? 'paso' : 'pasos'}${p.casoId ? ' · ' + (caso ? esc(caso.nombre) : 'caso eliminado') : ''}</div>
+            <div class="proto-badges">
+              <span class="proto-badge nivel-${esc(p.nivel)}">${NIVEL_TXT[p.nivel] || esc(p.nivel)}</span>
+              <span class="proto-badge gris">${TIPO_TXT[p.tipo] || esc(p.tipo)}</span>
+              ${p.ordenObligatorio ? '<span class="proto-badge gris">Orden fijo</span>' : ''}
+            </div>
+          </div>
+          <div class="caso-acciones">
+            <button class="btn-info-caso" title="Ver detalle">${SVG_INFO}</button>
+            <button class="btn-editar-caso" title="Editar protocolo">${SVG_LAPIZ}</button>
+            <button class="btn-borrar" title="Eliminar protocolo">${SVG_PAPELERA}</button>
+          </div>
+        </div>
+        <div class="proto-detalle">
+          ${p.descripcion ? `<div>${esc(p.descripcion)}</div>` : ''}
+          <ol>${(p.pasos || []).map(x => `<li>${esc(x.texto)}${x.zona ? ` <span class="paso-zona">${SVG_PIN}${esc(tituloZona(x.zona))}</span>` : ''}${htmlEvalsPaso(x)}</li>`).join('')}</ol>
+          ${evaluaciones.map(e => `<div>${e}</div>`).join('')}
+          <div>Para superar: <strong>${cr.porcentajeMinimo != null ? cr.porcentajeMinimo : 80}%</strong> de aciertos y todo lo marcado con ★${cr.tiempoMaxMin ? ` en menos de <strong>${esc(cr.tiempoMaxMin)} min</strong>` : ''}</div>
+        </div>`;
+
+      item.querySelector('.btn-info-caso').addEventListener('click', () => {
+        item.querySelector('.proto-detalle').classList.toggle('visible');
+      });
+      item.querySelector('.btn-editar-caso').addEventListener('click', async () => {
+        await refrescarCasosProtocolo();
+        protoEditandoId = p.id;
+        rellenarFormularioProtocolo(p);
+        document.getElementById('proto-msg').textContent = '';
+        document.getElementById('proto-editando-texto').textContent = 'Editando: ' + p.nombre;
+        document.getElementById('proto-editando-aviso').classList.add('visible');
+        document.getElementById('proto-tab-form-btn').textContent = 'Editar protocolo';
+        document.getElementById('btn-guardar-proto').textContent  = 'Guardar cambios';
+        mostrarTabProtocolos('form');
+        document.getElementById('card-protocolos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      item.querySelector('.btn-borrar').addEventListener('click', () => borrarProtocolo(p));
+      return item;
+    }
+
+    async function borrarProtocolo(p) {
+      if (!confirm(`¿Eliminar el protocolo "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+      try {
+        const resp = await fetch('/api/admin/protocolos/' + encodeURIComponent(p.id), { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) {
+          if (protoEditandoId === p.id) limpiarFormularioProtocolo();
+          cargarListaProtocolos();
+        } else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
+    // ── Arrancar ───────────────────────────────────────────────────
+    cargarZonas();
+    cargarListaClips();
+    cargarListaCasos();
+    renderPasos();
+    cargarDatosProtocolo().then(cargarListaProtocolos);
+  </script>
+</body>
+</html>

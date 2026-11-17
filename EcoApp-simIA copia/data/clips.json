@@ -1,0 +1,80 @@
+[
+  {
+    "zona": "pulmonar-apical-d",
+    "titulo": "Pulmonar apical derecho",
+    "icono": "icono-pulmon",
+    "clips": []
+  },
+  {
+    "zona": "pulmonar-apical-i",
+    "titulo": "Pulmonar apical izquierdo",
+    "icono": "icono-pulmon",
+    "clips": []
+  },
+  {
+    "zona": "pulmonar-basal-d",
+    "titulo": "Pulmonar basal derecho",
+    "icono": "icono-pulmon",
+    "clips": []
+  },
+  {
+    "zona": "pulmonar-basal-i",
+    "titulo": "Pulmonar basal izquierdo",
+    "icono": "icono-pulmon",
+    "clips": []
+  },
+  {
+    "zona": "cardiaco-eje",
+    "titulo": "Cardíaco — eje largo y corto",
+    "icono": "icono-corazon",
+    "clips": []
+  },
+  {
+    "zona": "cardiaco-apical",
+    "titulo": "Cardíaco — apical 4 cámaras",
+    "icono": "icono-corazon",
+    "clips": []
+  },
+  {
+    "zona": "cardiaco-subcostal",
+    "titulo": "Cardíaco — subcostal",
+    "icono": "icono-corazon",
+    "clips": []
+  },
+  {
+    "zona": "grandes-vasos",
+    "titulo": "Grandes vasos — aorta y VCI",
+    "icono": "icono-aorta",
+    "clips": []
+  },
+  {
+    "zona": "morrison",
+    "titulo": "Espacio de Morrison — hepatorrenal",
+    "icono": "icono-riñon",
+    "clips": []
+  },
+  {
+    "zona": "esplenorenal",
+    "titulo": "Esplenorrenal — izquierdo",
+    "icono": "icono-riñon",
+    "clips": []
+  },
+  {
+    "zona": "douglas",
+    "titulo": "Fondo de saco de Douglas",
+    "icono": "icono-utero",
+    "clips": []
+  },
+  {
+    "zona": "venas-d",
+    "titulo": "Venas MMII — miembro inferior derecho",
+    "icono": "icono-miembros-inferiores",
+    "clips": []
+  },
+  {
+    "zona": "venas-i",
+    "titulo": "Venas MMII — miembro inferior izquierdo",
+    "icono": "icono-miembros-inferiores",
+    "clips": []
+  }
+]

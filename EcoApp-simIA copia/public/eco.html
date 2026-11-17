@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Eco · EcoApp SimIA</title>
+  <style>
+    @font-face {
+      font-family: 'Digital7';
+      src: url('https://fonts.cdnfonts.com/s/1027/digital-7.woff') format('woff');
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* Reproductor */
+    #eco-video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Pantalla de espera */
+    #eco-espera {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: rgba(255,255,255,0.25);
+    }
+    #eco-espera .logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: rgba(255,255,255,0.15);
+    }
+    #eco-espera .icon { font-size: 52px; }
+    #eco-espera p { font-size: 16px; }
+
+    /* Pantalla negra */
+    #eco-negro {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 20;
+      display: none;
+    }
+
+    /* Overlay ecógrafo */
+    #eco-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      font-family: 'Digital7', 'Courier New', monospace;
+    }
+
+    /* Fecha y hora — esquina superior izquierda */
+    #eco-datetime {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    #eco-fecha, #eco-hora {
+      font-size: clamp(11px, 2vw, 15px);
+      font-weight: 700;
+      color: #00ff88;
+      text-shadow: 0 0 6px rgba(0,255,136,0.6);
+      letter-spacing: 0.08em;
+      line-height: 1.2;
+    }
+
+    /* FREEZE — esquina superior derecha */
+    #eco-frozen-badge {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      font-size: clamp(10px, 1.8vw, 13px);
+      font-weight: 700;
+      color: #ffdd00;
+      text-shadow: 0 0 6px rgba(255,221,0,0.7);
+      letter-spacing: 0.1em;
+      display: none;
+    }
+
+
+
+    .icon-inline {
+      display: inline-flex;
+      vertical-align: -2px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="eco-video" autoplay loop muted playsinline></video>
+
+  <div id="eco-espera">
+    <div class="logo">EcoApp SimIA</div>
+    <div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg></div>
+    <p>Esperando imagen del instructor...</p>
+  </div>
+
+  <div id="eco-negro"></div>
+
+  <!-- Overlay estilo ecógrafo -->
+  <div id="eco-overlay">
+    <div id="eco-datetime">
+      <span id="eco-fecha"></span>
+      <span id="eco-hora"></span>
+    </div>
+    <div id="eco-frozen-badge">
+      <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" style="vertical-align:-1px;margin-right:4px"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>PAUSA
+    </div>
+  </div>
+
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/socket-transporte.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sala = params.get('sala');
+    if (!sala) {
+      alert('No se ha indicado ninguna sala. Volviendo al inicio.');
+      window.location.href = '/';
+    }
+    const socket      = crearTransporte(sala, 'eco');
+    const video       = document.getElementById('eco-video');
+    const espera      = document.getElementById('eco-espera');
+    const negro       = document.getElementById('eco-negro');
+    const frozenBadge = document.getElementById('eco-frozen-badge');
+    const ecoFecha    = document.getElementById('eco-fecha');
+    const ecoHora     = document.getElementById('eco-hora');
+
+    // Reloj en tiempo real
+    function actualizarReloj() {
+      const ahora = new Date();
+      const dias = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+      const meses = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+      const d = String(ahora.getDate()).padStart(2,'0');
+      const m = meses[ahora.getMonth()];
+      const y = ahora.getFullYear();
+      const dia = dias[ahora.getDay()];
+      ecoFecha.textContent = `${dia} ${d}-${m}-${y}`;
+      const h = String(ahora.getHours()).padStart(2,'0');
+      const min = String(ahora.getMinutes()).padStart(2,'0');
+      const s = String(ahora.getSeconds()).padStart(2,'0');
+      ecoHora.textContent = `${h}:${min}:${s}`;
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+
+    // Estado inicial al conectarse
+    socket.on('estado-inicial', (estado) => {
+      if (estado.clip)      cargarClip(estado.clip);
+      if (estado.congelado) congelar(true);
+      if (estado.negro)     pantallaNegraActivar(true);
+    });
+
+    // Clip cambiado
+    socket.on('clip-cambiado', (clip) => {
+      if (clip) cargarClip(clip);
+      else      limpiarVideo();
+    });
+
+    // Congelar
+    socket.on('imagen-congelada', congelar);
+
+    // Pantalla negra
+    socket.on('pantalla-negra', pantallaNegraActivar);
+
+    // El instructor ha cerrado la sesión → volver al selector de monitor
+    // de esta misma sala (no al lobby inicial).
+    socket.on('sesion-cerrada', () => {
+      window.location.href = '/?sala=' + encodeURIComponent(sala);
+    });
+
+    function cargarClip(clip) {
+      espera.style.display = 'none';
+      video.src = clip.archivo;
+      video.play().catch(() => {});
+    }
+
+    function limpiarVideo() {
+      video.pause();
+      video.src              = '';
+      espera.style.display   = 'flex';
+      frozenBadge.style.display = 'none';
+    }
+
+    function congelar(valor) {
+      if (valor) {
+        video.pause();
+        frozenBadge.style.display = 'block';
+      } else {
+        video.play().catch(() => {});
+        frozenBadge.style.display = 'none';
+      }
+    }
+
+    function pantallaNegraActivar(valor) {
+      negro.style.display = valor ? 'block' : 'none';
+    }
+  </script>
+</body>
+</html>

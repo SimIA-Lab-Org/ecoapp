@@ -426,6 +426,9 @@ function emitirClip(clip, datos) {
   // anatómica. NUNCA se envía "nombre", "sub" ni "patologico", para que
   // el alumno no pueda ver el diagnóstico y tenga que interpretarlo él mismo.
   socket.emit('cambiar-clip', { archivo: clip.archivo, zona: datos.titulo });
+  // Al evaluador (pantalla E) sí le mandamos qué clip es, para que pueda
+  // marcar el paso del protocolo. El servidor solo se lo reenvía a él.
+  socket.emit('info-clip', { zona: datos.zona, zonaTitulo: datos.titulo, nombre: clip.nombre, patologico: !!clip.patologico });
 
   // Emitir
   nowPlayingTit.textContent = `${datos.titulo} · ${clip.nombre}`;

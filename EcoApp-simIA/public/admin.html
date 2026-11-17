@@ -631,6 +631,231 @@
     .clip-check-badge {
       font-size: 10px; padding: 1px 6px; border-radius: 6px; font-weight: 500;
     }
+
+    /* ── PROTOCOLOS ── */
+    .campo input[type="number"],
+    .campo textarea {
+      padding: 10px 12px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+    }
+    .campo textarea { resize: vertical; min-height: 60px; }
+    .campo input[type="number"]:focus,
+    .campo textarea:focus { outline: none; border-color: var(--teal); background: var(--surface); }
+    .campo-fila { display: flex; gap: 10px; flex-wrap: wrap; }
+    .campo-fila > .campo { flex: 1; min-width: 140px; }
+    .campo-ayuda { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+    .proto-bloque {
+      border-top: 0.5px solid var(--border);
+      padding-top: 14px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    .proto-bloque-titulo {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    /* Selector segmentado (nivel / tipo) */
+    .seg {
+      display: flex;
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 9px 6px;
+      border: none;
+      border-radius: 8px;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .seg-btn.activa { background: var(--surface); color: var(--teal); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+    /* Checklist de pasos */
+    .pasos-lista { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .paso-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 8px 8px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg);
+    }
+    .paso-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--teal-l); color: var(--teal);
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .paso-cuerpo { flex: 1; min-width: 0; }
+    .paso-texto { font-size: 13px; color: var(--text); line-height: 1.35; word-break: break-word; }
+    .paso-zona {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--teal); margin-top: 3px;
+    }
+    .paso-zona svg { flex-shrink: 0; }
+    /* En móvil los botones van debajo del texto para no estrecharlo */
+    @media (max-width: 560px) {
+      .paso-row { flex-wrap: wrap; row-gap: 6px; }
+      .paso-cuerpo { flex: 1 1 calc(100% - 40px); }
+      .paso-acciones { width: 100%; justify-content: flex-end; }
+      .paso-row .paso-edit { flex: 1 1 calc(100% - 40px); }
+    }
+    /* Editor de paso (nuevo y edición en línea) */
+    .pe-titulo { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .pe { display: flex; flex-direction: column; gap: 6px; }
+    .pe-eval {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+    .paso-row .pe-eval { background: var(--surface); }
+    .pe-fila { display: flex; align-items: center; gap: 10px; min-height: 30px; }
+    .pe-fila > span { flex: 1; font-size: 13px; color: var(--text); }
+    .pe-sub { display: none; flex-direction: column; gap: 6px; padding: 0 0 4px 0; }
+    .pe-sub.visible { display: flex; }
+    .pe-oblig {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+      cursor: pointer; user-select: none;
+    }
+    .pe-oblig input { width: 18px; height: 18px; accent-color: var(--teal); flex-shrink: 0; }
+    .pe-err { font-size: 12px; color: var(--red); min-height: 0; }
+    .pe-err:empty { display: none; }
+    .btn-anadir-paso { align-self: flex-end; padding: 10px 16px; }
+    .pe .toggle { width: 40px; height: 24px; }
+    .pe .toggle-slider::before { width: 18px; height: 18px; }
+    .pe .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Etiquetas de ventana / hallazgo bajo cada paso */
+    .paso-evals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .paso-eval {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      color: var(--text);
+    }
+    .paso-eval b { font-weight: 600; color: var(--muted); }
+    .paso-eval.imprescindible { border-color: var(--teal); }
+    .paso-eval.imprescindible::after { content: ' ★'; color: var(--teal); }
+    .proto-detalle .paso-evals { margin-top: 3px; }
+    .proto-detalle .paso-eval { background: var(--bg); }
+
+    /* Los interruptores de protocolos en verde (el rojo es para "patológico") */
+    #card-protocolos .toggle input:checked + .toggle-slider { background: var(--teal); }
+    .paso-zona.sin-zona { color: var(--muted); }
+    .paso-acciones { display: flex; gap: 4px; flex-shrink: 0; }
+    .btn-icono {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      border: 0.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; padding: 0;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+    .btn-icono:hover:not(:disabled) { background: var(--teal-l); color: var(--teal); border-color: var(--teal); }
+    .btn-icono.peligro:hover:not(:disabled) { background: var(--red-l); color: var(--red); border-color: var(--red); }
+    .btn-icono:disabled { opacity: 0.3; cursor: default; }
+    .paso-edit { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .paso-edit input[type="text"], .paso-edit select,
+    .paso-nuevo input[type="text"], .paso-nuevo select {
+      padding: 9px 10px;
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      width: 100%;
+    }
+    .paso-edit input[type="text"]:focus, .paso-edit select:focus,
+    .paso-nuevo input[type="text"]:focus, .paso-nuevo select:focus { outline: none; border-color: var(--teal); }
+    .paso-nuevo {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px;
+      border: 1.5px dashed var(--border);
+      border-radius: 12px;
+    }
+    .paso-nuevo-fila { display: flex; gap: 6px; }
+    .paso-nuevo-fila select { flex: 1; min-width: 0; }
+    .btn-anadir-paso {
+      padding: 9px 14px;
+      background: var(--teal); color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      font-family: var(--font); cursor: pointer;
+      white-space: nowrap;
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    .sub-bloque {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin: -4px 0 12px 0;
+      padding: 10px 12px;
+      background: var(--bg);
+      border-radius: 10px;
+    }
+    .sub-bloque.visible { display: flex; }
+    .sub-bloque .campo { margin-bottom: 0; }
+    .sub-bloque .campo input[type="text"] { background: var(--surface); }
+    .sub-bloque .toggle-row { margin-bottom: 0; }
+
+    /* Lista de protocolos guardados */
+    .proto-dot { background: var(--teal); }
+    .proto-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+    .proto-badge {
+      font-size: 10px; font-weight: 500;
+      padding: 2px 7px; border-radius: 8px;
+      background: var(--teal-l); color: var(--teal);
+    }
+    .proto-badge.nivel-medio    { background: #fef3e0; color: #7a4800; }
+    .proto-badge.nivel-avanzado { background: var(--red-l); color: var(--red); }
+    .proto-badge.gris           { background: #eceef1; color: var(--muted); }
+    .proto-detalle {
+      display: none;
+      border-top: 0.5px solid var(--border);
+      padding: 10px 12px;
+      font-size: 12px; color: var(--muted);
+      flex-direction: column; gap: 6px;
+    }
+    .proto-detalle.visible { display: flex; }
+    .proto-detalle ol { padding-left: 20px; display: flex; flex-direction: column; gap: 3px; color: var(--text); }
+    .proto-detalle strong { color: var(--text); font-weight: 500; }
+
+    .editando-aviso {
+      display: none;
+      align-items: center; gap: 8px;
+      padding: 9px 12px;
+      background: var(--teal-l); color: var(--teal);
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .editando-aviso.visible { display: flex; }
+    .editando-aviso span { flex: 1; }
   </style>
 </head>
 <body>
@@ -712,6 +937,153 @@
           <div class="edit-acciones" style="margin-top:12px;">
             <span class="edit-msg" id="caso-msg"></span>
             <button class="btn-guardar" id="btn-guardar-caso">Guardar caso</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Protocolos -->
+    <div class="card" id="card-protocolos">
+      <div class="card-titulo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1z"/><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2"/><polyline points="8.5 13 10.5 15 15.5 10"/></svg>
+        Protocolos
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn activa" id="proto-tab-lista-btn">Protocolos guardados</button>
+        <button class="tab-btn" id="proto-tab-form-btn">+ Nuevo protocolo</button>
+      </div>
+
+      <!-- Lista -->
+      <div class="tab-seccion visible" id="proto-tab-lista">
+        <div class="card-colapsable" id="card-protocolos-lista">
+          <div class="lista-header">
+            <div class="colapsable-toggle" id="protocolos-toggle">
+              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              <div class="card-titulo">Protocolos guardados</div>
+              <span class="colapsable-contador" id="protocolos-contador"></span>
+            </div>
+          </div>
+          <div class="colapsable-body">
+            <div id="lista-protocolos"><div class="lista-vacia">Cargando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario crear / editar -->
+      <div class="tab-seccion" id="proto-tab-form">
+        <div class="nuevo-caso-form">
+
+          <div class="editando-aviso" id="proto-editando-aviso">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span id="proto-editando-texto">Editando protocolo</span>
+          </div>
+
+          <!-- Datos generales -->
+          <div class="campo">
+            <label>Nombre del protocolo</label>
+            <input type="text" id="proto-nombre" placeholder="Ej: Valoración de derrame pericárdico" maxlength="120">
+          </div>
+          <div class="campo">
+            <label>Descripción (opcional)</label>
+            <input type="text" id="proto-desc" placeholder="Ej: Protocolo FOCUS cardíaco básico">
+          </div>
+          <div class="campo">
+            <label>Caso clínico vinculado (opcional)</label>
+            <select id="proto-caso"><option value="">— Ninguno —</option></select>
+          </div>
+          <div class="campo">
+            <label>Nivel</label>
+            <div class="seg" id="proto-nivel">
+              <button type="button" class="seg-btn activa" data-valor="basico">Básico</button>
+              <button type="button" class="seg-btn" data-valor="medio">Medio</button>
+              <button type="button" class="seg-btn" data-valor="avanzado">Avanzado</button>
+            </div>
+          </div>
+          <div class="campo">
+            <label>Tipo</label>
+            <div class="seg" id="proto-tipo">
+              <button type="button" class="seg-btn activa" data-valor="entrenamiento">Entrenamiento</button>
+              <button type="button" class="seg-btn" data-valor="simulacion">Solo simulación</button>
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Checklist</div>
+            <div class="toggle-row">
+              <div class="toggle-label">
+                Orden obligatorio
+                <small>El alumno debe seguir los pasos en este orden</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="proto-orden" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="pasos-lista" id="proto-pasos"></div>
+
+            <div class="paso-nuevo">
+              <div class="pe-titulo">Nuevo paso</div>
+              <div id="paso-nuevo-editor"></div>
+              <button type="button" class="btn-anadir-paso" id="btn-anadir-paso">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Añadir paso
+              </button>
+            </div>
+            <p class="campo-ayuda" style="margin-top:6px"><strong>Zona de la silueta:</strong> en autoentrenamiento, la app comprueba sola que el alumno pulsa esta zona (y en orden, si está activado).<br><strong>Ventana y hallazgo:</strong> los puntúa el instructor con ✓/✗ durante el entrenamiento supervisado.</p>
+          </div>
+
+          <!-- Diagnóstico final -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Diagnóstico final</div>
+
+            <div class="toggle-row">
+              <div class="toggle-label">
+                Evaluar diagnóstico
+                <small>Lo puntúa el instructor una sola vez, al terminar el caso (solo en entrenamiento supervisado)</small>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="proto-ev-diag">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sub-bloque" id="proto-diag-bloque">
+              <div class="campo">
+                <label>Diagnóstico esperado</label>
+                <input type="text" id="proto-diag-esperado" placeholder="Ej: Derrame pericárdico con taponamiento">
+              </div>
+              <div class="toggle-row">
+                <div class="toggle-label">Imprescindible para superar</div>
+                <label class="toggle">
+                  <input type="checkbox" id="proto-diag-oblig" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Criterios -->
+          <div class="proto-bloque">
+            <div class="proto-bloque-titulo">Criterios para superar</div>
+            <div class="campo-fila">
+              <div class="campo">
+                <label>% mínimo de aciertos</label>
+                <input type="number" id="proto-porcentaje" min="0" max="100" step="5" value="80" inputmode="numeric">
+              </div>
+              <div class="campo">
+                <label>Tiempo máximo (min, opcional)</label>
+                <input type="number" id="proto-tiempo" min="0" step="0.5" placeholder="Sin límite" inputmode="decimal">
+              </div>
+            </div>
+            <p class="campo-ayuda">Cuenta como un acierto cada paso hecho y cada ventana, hallazgo y diagnóstico correctos. Lo marcado como imprescindible tiene que estar bien siempre, aunque se llegue al porcentaje.</p>
+          </div>
+
+          <div class="edit-acciones" style="margin-top:4px;">
+            <span class="edit-msg" id="proto-msg"></span>
+            <button class="btn-cancelar-edit" id="btn-cancelar-proto">Cancelar</button>
+            <button class="btn-guardar" id="btn-guardar-proto">Guardar protocolo</button>
           </div>
         </div>
       </div>
@@ -1536,10 +1908,460 @@
       document.getElementById('card-casos-lista').classList.toggle('abierta');
     });
 
+    // ════════════════════════════════════════════════════════════════
+    // ── PROTOCOLOS ─────────────────────────────────────────────────
+    // ════════════════════════════════════════════════════════════════
+    const NIVEL_TXT = { basico: 'Básico', medio: 'Medio', avanzado: 'Avanzado' };
+    const TIPO_TXT  = { entrenamiento: 'Entrenamiento', simulacion: 'Solo simulación' };
+
+    const SVG_ARRIBA = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+    const SVG_ABAJO  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    const SVG_LAPIZ  = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    const SVG_PAPELERA = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>';
+    const SVG_CHECK  = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    const SVG_CRUZ   = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    const SVG_PIN    = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+    const SVG_INFO   = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.5" fill="currentColor" stroke="none"/></svg>';
+
+    let protoZonas      = [];   // [{ zona, titulo }]
+    let protoCasos      = [];   // casos clínicos (para vincular)
+    let protoPasos      = [];   // pasos del formulario: [{ id, texto, zona }]
+    let protoEditandoId = null; // id del protocolo en edición, o null si es nuevo
+    let pasoEditandoIdx = -1;   // índice del paso que se está editando en línea
+
+    // Escapa texto para meterlo en HTML sin romper atributos (comillas, <, etc.)
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function tituloZona(zona) {
+      const z = protoZonas.find(x => x.zona === zona);
+      return z ? z.titulo : zona;
+    }
+
+    function opcionesZona(seleccionada) {
+      return '<option value="">Sin zona de la silueta</option>' +
+        protoZonas.map(z => `<option value="${esc(z.zona)}" ${z.zona === seleccionada ? 'selected' : ''}>${esc(z.titulo)}</option>`).join('');
+    }
+
+    async function cargarDatosProtocolo() {
+      try { protoZonas = await fetch('/api/zonas').then(r => r.json()); } catch (e) { protoZonas = []; }
+      montarEditorNuevo();
+      await refrescarCasosProtocolo();
+    }
+
+    async function refrescarCasosProtocolo() {
+      const sel = document.getElementById('proto-caso');
+      const actual = sel.value;
+      try { protoCasos = await fetch('/api/admin/casos').then(r => r.json()); } catch (e) { protoCasos = []; }
+      sel.innerHTML = '<option value="">— Ninguno —</option>' +
+        protoCasos.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+      sel.value = protoCasos.some(c => c.id === actual) ? actual : '';
+    }
+
+    // ── Selectores segmentados (nivel / tipo) ──────────────────────
+    function valorSeg(id) {
+      const b = document.querySelector(`#${id} .seg-btn.activa`);
+      return b ? b.dataset.valor : null;
+    }
+    function ponerSeg(id, valor) {
+      document.querySelectorAll(`#${id} .seg-btn`).forEach(b => b.classList.toggle('activa', b.dataset.valor === valor));
+    }
+    ['proto-nivel', 'proto-tipo'].forEach(id => {
+      document.querySelectorAll(`#${id} .seg-btn`).forEach(b => {
+        b.addEventListener('click', () => ponerSeg(id, b.dataset.valor));
+      });
+    });
+
+    // ── Diagnóstico final: mostrar campos al activarlo ────────────
+    function syncSubBloques() {
+      document.getElementById('proto-diag-bloque').classList.toggle('visible', document.getElementById('proto-ev-diag').checked);
+    }
+    document.getElementById('proto-ev-diag').addEventListener('change', syncSubBloques);
+
+    // ── Editor de paso (se usa para "Nuevo paso" y para editar) ───
+    // Texto + zona + ventana (opcional) + hallazgo (opcional).
+    function crearEditorPaso(p) {
+      p = p || {};
+      const v = p.ventana  || {};
+      const h = p.hallazgo || {};
+      const el = document.createElement('div');
+      el.className = 'pe';
+      el.innerHTML = `
+        <input type="text" class="pe-texto" placeholder="Ej: Colocar la sonda en el espacio de Morrison" value="${esc(p.texto)}">
+        <select class="pe-zona">${opcionesZona(p.zona)}</select>
+        <div class="pe-eval">
+          <div class="pe-fila">
+            <span>Evaluar ventana</span>
+            <label class="toggle"><input type="checkbox" class="pe-v-on" ${v.evaluar ? 'checked' : ''}><span class="toggle-slider"></span></label>
+          </div>
+          <div class="pe-sub pe-v-sub ${v.evaluar ? 'visible' : ''}">
+            <input type="text" class="pe-v-txt" placeholder="Ventana correcta. Ej: Hepatorrenal" value="${esc(v.esperada)}">
+            <label class="pe-oblig"><input type="checkbox" class="pe-v-ob" ${v.evaluar ? (v.obligatoria ? 'checked' : '') : 'checked'}> Imprescindible para superar</label>
+          </div>
+          <div class="pe-fila">
+            <span>Evaluar hallazgo</span>
+            <label class="toggle"><input type="checkbox" class="pe-h-on" ${h.evaluar ? 'checked' : ''}><span class="toggle-slider"></span></label>
+          </div>
+          <div class="pe-sub pe-h-sub ${h.evaluar ? 'visible' : ''}">
+            <input type="text" class="pe-h-txt" placeholder="Hallazgo esperado. Ej: Líquido libre" value="${esc(h.esperado)}">
+            <label class="pe-oblig"><input type="checkbox" class="pe-h-ob" ${h.evaluar ? (h.obligatorio ? 'checked' : '') : ''}> Imprescindible para superar</label>
+          </div>
+        </div>
+        <div class="pe-err"></div>`;
+      el.querySelector('.pe-v-on').addEventListener('change', e => {
+        el.querySelector('.pe-v-sub').classList.toggle('visible', e.target.checked);
+        if (e.target.checked) el.querySelector('.pe-v-txt').focus();
+      });
+      el.querySelector('.pe-h-on').addEventListener('change', e => {
+        el.querySelector('.pe-h-sub').classList.toggle('visible', e.target.checked);
+        if (e.target.checked) el.querySelector('.pe-h-txt').focus();
+      });
+      return el;
+    }
+
+    // Lee y valida un editor. Devuelve el paso o null (y pinta el error).
+    function leerEditorPaso(el, idExistente) {
+      const err = el.querySelector('.pe-err');
+      const q = s => el.querySelector(s);
+      const texto = q('.pe-texto').value.trim();
+      const vOn = q('.pe-v-on').checked, hOn = q('.pe-h-on').checked;
+      const vTxt = q('.pe-v-txt').value.trim(), hTxt = q('.pe-h-txt').value.trim();
+      err.textContent = '';
+      if (!texto)       { err.textContent = 'Escribe qué tiene que hacer el alumno en este paso'; q('.pe-texto').focus(); return null; }
+      if (vOn && !vTxt) { err.textContent = 'Indica cuál es la ventana correcta'; q('.pe-v-txt').focus(); return null; }
+      if (hOn && !hTxt) { err.textContent = 'Indica el hallazgo esperado'; q('.pe-h-txt').focus(); return null; }
+      return {
+        id: idExistente || 'paso-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        texto,
+        zona: q('.pe-zona').value || null,
+        ventana:  vOn ? { evaluar: true, esperada: vTxt, obligatoria: q('.pe-v-ob').checked } : { evaluar: false },
+        hallazgo: hOn ? { evaluar: true, esperado: hTxt, obligatorio: q('.pe-h-ob').checked } : { evaluar: false }
+      };
+    }
+
+    // Etiquetas "Ventana: X ★" / "Hallazgo: Y" para mostrar bajo un paso
+    function htmlEvalsPaso(p) {
+      const tags = [];
+      if (p.ventana && p.ventana.evaluar)
+        tags.push(`<span class="paso-eval ${p.ventana.obligatoria ? 'imprescindible' : ''}"><b>Ventana:</b> ${esc(p.ventana.esperada)}</span>`);
+      if (p.hallazgo && p.hallazgo.evaluar)
+        tags.push(`<span class="paso-eval ${p.hallazgo.obligatorio ? 'imprescindible' : ''}"><b>Hallazgo:</b> ${esc(p.hallazgo.esperado)}</span>`);
+      return tags.length ? `<div class="paso-evals">${tags.join('')}</div>` : '';
+    }
+
+    let editorNuevo = null;
+    function montarEditorNuevo() {
+      const cont = document.getElementById('paso-nuevo-editor');
+      cont.innerHTML = '';
+      editorNuevo = crearEditorPaso({});
+      cont.appendChild(editorNuevo);
+      editorNuevo.querySelector('.pe-texto').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); anadirPaso(); }
+      });
+    }
+
+    // ── Checklist: pintar, añadir, mover, editar, borrar ──────────
+    function renderPasos() {
+      const cont = document.getElementById('proto-pasos');
+      if (protoPasos.length === 0) {
+        cont.innerHTML = '<div class="lista-vacia" style="padding:14px">Todavía no hay pasos. Añade el primero aquí abajo.</div>';
+        return;
+      }
+      cont.innerHTML = '';
+      protoPasos.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'paso-row';
+
+        if (i === pasoEditandoIdx) {
+          row.innerHTML = `<span class="paso-num">${i + 1}</span><div class="paso-edit"></div>
+            <div class="paso-acciones">
+              <button type="button" class="btn-icono" data-acc="ok" title="Guardar paso">${SVG_CHECK}</button>
+              <button type="button" class="btn-icono" data-acc="cancelar" title="Cancelar">${SVG_CRUZ}</button>
+            </div>`;
+          const editor = crearEditorPaso(p);
+          row.querySelector('.paso-edit').appendChild(editor);
+          const confirmar = () => {
+            const paso = leerEditorPaso(editor, p.id);
+            if (!paso) return;
+            protoPasos[i] = paso;
+            pasoEditandoIdx = -1;
+            renderPasos();
+          };
+          row.querySelector('[data-acc="ok"]').addEventListener('click', confirmar);
+          row.querySelector('[data-acc="cancelar"]').addEventListener('click', () => { pasoEditandoIdx = -1; renderPasos(); });
+          editor.querySelector('.pe-texto').addEventListener('keydown', e => { if (e.key === 'Enter') confirmar(); });
+          cont.appendChild(row);
+          setTimeout(() => editor.querySelector('.pe-texto').focus(), 0);
+          return;
+        }
+
+        const zonaHtml = p.zona
+          ? `<span class="paso-zona">${SVG_PIN}${esc(tituloZona(p.zona))}</span>`
+          : `<span class="paso-zona sin-zona">Lo marca el instructor</span>`;
+        row.innerHTML = `
+          <span class="paso-num">${i + 1}</span>
+          <div class="paso-cuerpo">
+            <div class="paso-texto">${esc(p.texto)}</div>
+            ${zonaHtml}
+            ${htmlEvalsPaso(p)}
+          </div>
+          <div class="paso-acciones">
+            <button type="button" class="btn-icono" data-acc="subir" title="Subir" ${i === 0 ? 'disabled' : ''}>${SVG_ARRIBA}</button>
+            <button type="button" class="btn-icono" data-acc="bajar" title="Bajar" ${i === protoPasos.length - 1 ? 'disabled' : ''}>${SVG_ABAJO}</button>
+            <button type="button" class="btn-icono" data-acc="editar" title="Editar">${SVG_LAPIZ}</button>
+            <button type="button" class="btn-icono peligro" data-acc="borrar" title="Borrar">${SVG_PAPELERA}</button>
+          </div>`;
+
+        row.querySelector('[data-acc="subir"]').addEventListener('click', () => moverPaso(i, -1));
+        row.querySelector('[data-acc="bajar"]').addEventListener('click', () => moverPaso(i, +1));
+        row.querySelector('[data-acc="editar"]').addEventListener('click', () => { pasoEditandoIdx = i; renderPasos(); });
+        row.querySelector('[data-acc="borrar"]').addEventListener('click', () => {
+          if (!confirm(`¿Borrar el paso ${i + 1}?`)) return;
+          protoPasos.splice(i, 1);
+          pasoEditandoIdx = -1;
+          renderPasos();
+        });
+        cont.appendChild(row);
+      });
+    }
+
+    function moverPaso(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= protoPasos.length) return;
+      [protoPasos[i], protoPasos[j]] = [protoPasos[j], protoPasos[i]];
+      pasoEditandoIdx = -1;
+      renderPasos();
+    }
+
+    function anadirPaso() {
+      const paso = leerEditorPaso(editorNuevo);
+      if (!paso) return;
+      protoPasos.push(paso);
+      renderPasos();
+      montarEditorNuevo();   // editor limpio para el siguiente paso
+      editorNuevo.querySelector('.pe-texto').focus();
+    }
+    document.getElementById('btn-anadir-paso').addEventListener('click', anadirPaso);
+
+    // ── Formulario: leer / rellenar / limpiar ──────────────────────
+    function leerFormularioProtocolo() {
+      return {
+        id:          protoEditandoId || undefined,
+        nombre:      document.getElementById('proto-nombre').value.trim(),
+        descripcion: document.getElementById('proto-desc').value.trim(),
+        casoId:      document.getElementById('proto-caso').value || null,
+        nivel:       valorSeg('proto-nivel'),
+        tipo:        valorSeg('proto-tipo'),
+        ordenObligatorio: document.getElementById('proto-orden').checked,
+        pasos:       protoPasos.map(p => ({ id: p.id, texto: p.texto, zona: p.zona, ventana: p.ventana, hallazgo: p.hallazgo })),
+        evaluacion: {
+          diagnostico: {
+            evaluar:     document.getElementById('proto-ev-diag').checked,
+            esperado:    document.getElementById('proto-diag-esperado').value.trim(),
+            obligatorio: document.getElementById('proto-diag-oblig').checked
+          }
+        },
+        criterios: {
+          porcentajeMinimo: document.getElementById('proto-porcentaje').value,
+          tiempoMaxMin:     document.getElementById('proto-tiempo').value || null
+        }
+      };
+    }
+
+    function rellenarFormularioProtocolo(p) {
+      const d  = (p.evaluacion || {}).diagnostico || {};
+      const cr = p.criterios || {};
+      document.getElementById('proto-nombre').value = p.nombre || '';
+      document.getElementById('proto-desc').value   = p.descripcion || '';
+      document.getElementById('proto-caso').value   = protoCasos.some(c => c.id === p.casoId) ? p.casoId : '';
+      ponerSeg('proto-nivel', p.nivel || 'basico');
+      ponerSeg('proto-tipo',  p.tipo  || 'entrenamiento');
+      document.getElementById('proto-orden').checked = p.ordenObligatorio !== false;
+      protoPasos = (p.pasos || []).map(x => JSON.parse(JSON.stringify(x)));
+      pasoEditandoIdx = -1;
+      document.getElementById('proto-ev-diag').checked          = !!d.evaluar;
+      document.getElementById('proto-diag-esperado').value      = d.esperado || '';
+      document.getElementById('proto-diag-oblig').checked       = d.evaluar ? d.obligatorio !== false : true;
+      document.getElementById('proto-porcentaje').value = cr.porcentajeMinimo != null ? cr.porcentajeMinimo : 80;
+      document.getElementById('proto-tiempo').value     = cr.tiempoMaxMin || '';
+      syncSubBloques();
+      renderPasos();
+    }
+
+    function limpiarFormularioProtocolo() {
+      protoEditandoId = null;
+      rellenarFormularioProtocolo({ nivel: 'basico', tipo: 'entrenamiento', ordenObligatorio: true, pasos: [] });
+      montarEditorNuevo();
+      document.getElementById('proto-msg').textContent  = '';
+      document.getElementById('proto-editando-aviso').classList.remove('visible');
+      document.getElementById('proto-tab-form-btn').textContent = '+ Nuevo protocolo';
+      document.getElementById('btn-guardar-proto').textContent  = 'Guardar protocolo';
+    }
+
+    // ── Pestañas ───────────────────────────────────────────────────
+    function mostrarTabProtocolos(cual) {
+      const lista = cual === 'lista';
+      document.getElementById('proto-tab-lista-btn').classList.toggle('activa', lista);
+      document.getElementById('proto-tab-form-btn').classList.toggle('activa', !lista);
+      document.getElementById('proto-tab-lista').classList.toggle('visible', lista);
+      document.getElementById('proto-tab-form').classList.toggle('visible', !lista);
+    }
+    document.getElementById('proto-tab-lista-btn').addEventListener('click', () => mostrarTabProtocolos('lista'));
+    document.getElementById('proto-tab-form-btn').addEventListener('click', () => {
+      refrescarCasosProtocolo();   // por si se ha creado un caso nuevo en esta misma visita
+      mostrarTabProtocolos('form');
+    });
+    document.getElementById('btn-cancelar-proto').addEventListener('click', () => {
+      limpiarFormularioProtocolo();
+      mostrarTabProtocolos('lista');
+    });
+    document.getElementById('protocolos-toggle').addEventListener('click', () => {
+      document.getElementById('card-protocolos-lista').classList.toggle('abierta');
+    });
+
+    // ── Guardar ────────────────────────────────────────────────────
+    document.getElementById('btn-guardar-proto').addEventListener('click', async () => {
+      const msg  = document.getElementById('proto-msg');
+      const btn  = document.getElementById('btn-guardar-proto');
+      if (pasoEditandoIdx !== -1) { msg.textContent = 'Termina de editar el paso abierto'; msg.className = 'edit-msg err'; return; }
+      if (editorNuevo && editorNuevo.querySelector('.pe-texto').value.trim()) {
+        msg.textContent = 'Tienes un paso sin añadir: pulsa "Añadir paso" o bórralo'; msg.className = 'edit-msg err'; return;
+      }
+      const datos = leerFormularioProtocolo();
+      if (!datos.nombre)           { msg.textContent = 'El protocolo necesita un nombre'; msg.className = 'edit-msg err'; return; }
+      if (datos.pasos.length === 0){ msg.textContent = 'Añade al menos un paso al checklist'; msg.className = 'edit-msg err'; return; }
+      if (datos.evaluacion.diagnostico.evaluar && !datos.evaluacion.diagnostico.esperado) {
+        msg.textContent = 'Indica el diagnóstico esperado'; msg.className = 'edit-msg err'; return;
+      }
+
+      msg.textContent = 'Guardando...'; msg.className = 'edit-msg';
+      btn.disabled = true;
+      try {
+        const resp = await fetch('/api/admin/protocolos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(datos)
+        });
+        const json = await resp.json();
+        if (json.ok) {
+          msg.textContent = '¡Protocolo guardado!'; msg.className = 'edit-msg ok';
+          setTimeout(() => {
+            limpiarFormularioProtocolo();
+            mostrarTabProtocolos('lista');
+            document.getElementById('card-protocolos-lista').classList.add('abierta');
+            cargarListaProtocolos();
+          }, 700);
+        } else {
+          msg.textContent = 'Error: ' + json.error; msg.className = 'edit-msg err';
+        }
+      } catch (e) {
+        msg.textContent = 'Error de conexión'; msg.className = 'edit-msg err';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    // ── Lista de protocolos guardados ─────────────────────────────
+    async function cargarListaProtocolos() {
+      const lista = document.getElementById('lista-protocolos');
+      const contador = document.getElementById('protocolos-contador');
+      lista.innerHTML = '<div class="lista-vacia">Cargando...</div>';
+      try {
+        const protocolos = await fetch('/api/admin/protocolos').then(r => r.json());
+        contador.textContent = protocolos.length + (protocolos.length === 1 ? ' protocolo' : ' protocolos');
+        if (protocolos.length === 0) {
+          lista.innerHTML = '<div class="lista-vacia">No hay protocolos guardados.<br>Usa la pestaña "+ Nuevo protocolo" para crear uno.</div>';
+          return;
+        }
+        lista.innerHTML = '';
+        protocolos
+          .slice()
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+          .forEach(p => lista.appendChild(itemProtocolo(p)));
+      } catch (e) {
+        lista.innerHTML = '<div class="lista-vacia">Error cargando los protocolos.</div>';
+      }
+    }
+
+    function itemProtocolo(p) {
+      const caso = p.casoId ? protoCasos.find(c => c.id === p.casoId) : null;
+      const ev = p.evaluacion || {};
+      const cr = p.criterios || {};
+      const nPasos = (p.pasos || []).length;
+
+      const evaluaciones = [];
+      if (ev.diagnostico && ev.diagnostico.evaluar)
+        evaluaciones.push(`Diagnóstico final: <strong>${esc(ev.diagnostico.esperado)}</strong>${ev.diagnostico.obligatorio ? ' (imprescindible)' : ''}`);
+
+      const item = document.createElement('div');
+      item.className = 'caso-item';
+      item.innerHTML = `
+        <div class="caso-header">
+          <div class="caso-dot proto-dot"></div>
+          <div class="caso-meta">
+            <div class="caso-nombre">${esc(p.nombre)}</div>
+            <div class="caso-desc">${nPasos} ${nPasos === 1 ? 'paso' : 'pasos'}${p.casoId ? ' · ' + (caso ? esc(caso.nombre) : 'caso eliminado') : ''}</div>
+            <div class="proto-badges">
+              <span class="proto-badge nivel-${esc(p.nivel)}">${NIVEL_TXT[p.nivel] || esc(p.nivel)}</span>
+              <span class="proto-badge gris">${TIPO_TXT[p.tipo] || esc(p.tipo)}</span>
+              ${p.ordenObligatorio ? '<span class="proto-badge gris">Orden fijo</span>' : ''}
+            </div>
+          </div>
+          <div class="caso-acciones">
+            <button class="btn-info-caso" title="Ver detalle">${SVG_INFO}</button>
+            <button class="btn-editar-caso" title="Editar protocolo">${SVG_LAPIZ}</button>
+            <button class="btn-borrar" title="Eliminar protocolo">${SVG_PAPELERA}</button>
+          </div>
+        </div>
+        <div class="proto-detalle">
+          ${p.descripcion ? `<div>${esc(p.descripcion)}</div>` : ''}
+          <ol>${(p.pasos || []).map(x => `<li>${esc(x.texto)}${x.zona ? ` <span class="paso-zona">${SVG_PIN}${esc(tituloZona(x.zona))}</span>` : ''}${htmlEvalsPaso(x)}</li>`).join('')}</ol>
+          ${evaluaciones.map(e => `<div>${e}</div>`).join('')}
+          <div>Para superar: <strong>${cr.porcentajeMinimo != null ? cr.porcentajeMinimo : 80}%</strong> de aciertos y todo lo marcado con ★${cr.tiempoMaxMin ? ` en menos de <strong>${esc(cr.tiempoMaxMin)} min</strong>` : ''}</div>
+        </div>`;
+
+      item.querySelector('.btn-info-caso').addEventListener('click', () => {
+        item.querySelector('.proto-detalle').classList.toggle('visible');
+      });
+      item.querySelector('.btn-editar-caso').addEventListener('click', async () => {
+        await refrescarCasosProtocolo();
+        protoEditandoId = p.id;
+        rellenarFormularioProtocolo(p);
+        document.getElementById('proto-msg').textContent = '';
+        document.getElementById('proto-editando-texto').textContent = 'Editando: ' + p.nombre;
+        document.getElementById('proto-editando-aviso').classList.add('visible');
+        document.getElementById('proto-tab-form-btn').textContent = 'Editar protocolo';
+        document.getElementById('btn-guardar-proto').textContent  = 'Guardar cambios';
+        mostrarTabProtocolos('form');
+        document.getElementById('card-protocolos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      item.querySelector('.btn-borrar').addEventListener('click', () => borrarProtocolo(p));
+      return item;
+    }
+
+    async function borrarProtocolo(p) {
+      if (!confirm(`¿Eliminar el protocolo "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+      try {
+        const resp = await fetch('/api/admin/protocolos/' + encodeURIComponent(p.id), { method: 'DELETE' });
+        const json = await resp.json();
+        if (json.ok) {
+          if (protoEditandoId === p.id) limpiarFormularioProtocolo();
+          cargarListaProtocolos();
+        } else alert('Error al borrar: ' + json.error);
+      } catch (e) {
+        alert('Error de conexión');
+      }
+    }
+
     // ── Arrancar ───────────────────────────────────────────────────
     cargarZonas();
     cargarListaClips();
     cargarListaCasos();
+    renderPasos();
+    cargarDatosProtocolo().then(cargarListaProtocolos);
   </script>
 </body>
 </html>

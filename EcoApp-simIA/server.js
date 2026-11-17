@@ -20,6 +20,7 @@ const CLOUDINARY_SECRET = process.env.CLOUDINARY_API_SECRET;
 // Se recargan de Cloudinary al arrancar el servidor
 let clipsCloudinary = [];
 let casosClinicos    = []; // casos guardados en Cloudinary como JSON
+let protocolos       = []; // protocolos de evaluación guardados en Cloudinary como JSON
 
 async function cargarCasosClinicos() {
   if (!CLOUDINARY_CLOUD || !CLOUDINARY_KEY || !CLOUDINARY_SECRET) return;
@@ -102,6 +103,8 @@ function httpGet(url, headers = {}) {
 
 // ── Middleware ─────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
+// Librería para generar el PDF del informe en el navegador (pantalla de entrenamiento)
+app.use('/vendor/jspdf', express.static(path.join(__dirname, 'node_modules', 'jspdf', 'dist')));
 // Para parsear JSON en el body de las peticiones de admin
 app.use(express.json({ limit: '5mb' }));
 
@@ -522,6 +525,241 @@ app.get('/api/casos', (req, res) => {
   res.json(casosClinicos.map(({ _publicId, ...c }) => c));
 });
 
+// ── PROTOCOLOS ─────────────────────────────────────────────────────
+// Cada protocolo define el checklist (pasos ordenados, cada uno con su
+// ventana y hallazgo opcionales), un diagnóstico global al final y los
+// criterios para considerar "superado".
+// Se guardan como JSON raw en Cloudinary, en la carpeta ecoapp-protocolos/,
+// igual que los casos clínicos.
+const CARPETA_PROTOCOLOS = 'ecoapp-protocolos';
+const NIVELES = ['basico', 'medio', 'avanzado'];
+const TIPOS   = ['entrenamiento', 'simulacion'];
+
+function cloudinaryConfigurado() {
+  return !!(CLOUDINARY_CLOUD && CLOUDINARY_KEY && CLOUDINARY_SECRET);
+}
+
+// Descarga todos los JSON raw de una carpeta de Cloudinary.
+// Devuelve [{ datos, publicId }] (solo los que tienen "id").
+async function cargarJsonsDeCarpeta(carpeta) {
+  const auth = Buffer.from(`${CLOUDINARY_KEY}:${CLOUDINARY_SECRET}`).toString('base64');
+  const data = await httpGet(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/raw?type=upload&max_results=500&prefix=${carpeta}/`,
+    { Authorization: `Basic ${auth}` }
+  );
+  const recursos = JSON.parse(data).resources || [];
+  const resultado = [];
+  for (const r of recursos) {
+    try {
+      const json  = await httpGet(r.secure_url, { Authorization: `Basic ${auth}` });
+      const datos = JSON.parse(json);
+      if (datos && datos.id) resultado.push({ datos, publicId: r.public_id });
+    } catch (e) {
+      console.error('Error leyendo JSON:', r.public_id, e.message);
+    }
+  }
+  return resultado;
+}
+
+// Sube (o sobrescribe) un objeto como JSON raw. Devuelve el public_id REAL
+// que asigna Cloudinary, que es el que hace falta luego para borrarlo.
+function subirJsonCloudinary(publicId, nombreArchivo, objeto) {
+  const crypto    = require('crypto');
+  const timestamp = Math.floor(Date.now() / 1000);
+  const toSign    = `overwrite=true&public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+  const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+
+  const boundary = '----FormBoundary' + Date.now();
+  const bodyBuf  = Buffer.from([
+    `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${nombreArchivo}"\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(objeto)}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="public_id"\r\n\r\n${publicId}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="api_key"\r\n\r\n${CLOUDINARY_KEY}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="timestamp"\r\n\r\n${timestamp}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="signature"\r\n\r\n${signature}`,
+    `--${boundary}\r\nContent-Disposition: form-data; name="overwrite"\r\n\r\ntrue`,
+    `--${boundary}--`
+  ].join('\r\n'));
+
+  return new Promise((resolve, reject) => {
+    const r = https.request({
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/raw/upload`,
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': bodyBuf.length
+      }
+    }, resp => {
+      let body = '';
+      resp.on('data', c => body += c);
+      resp.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(body); }
+        catch (e) { return reject(new Error('Respuesta inválida de Cloudinary: ' + body)); }
+        if (parsed.error) reject(new Error(parsed.error.message));
+        else resolve(parsed.public_id || `${publicId}.json`);
+      });
+    });
+    r.on('error', reject);
+    r.write(bodyBuf);
+    r.end();
+  });
+}
+
+// Borra un recurso raw. Acepta "ok" y "not found" como éxito (igual que casos).
+function borrarRawCloudinary(publicId) {
+  const crypto    = require('crypto');
+  const timestamp = Math.floor(Date.now() / 1000);
+  // resource_type NO se firma (va en la URL)
+  const toSign    = `public_id=${publicId}&timestamp=${timestamp}${CLOUDINARY_SECRET}`;
+  const signature = crypto.createHash('sha1').update(toSign).digest('hex');
+  const postData  = new URLSearchParams({
+    public_id: publicId, resource_type: 'raw',
+    timestamp, api_key: CLOUDINARY_KEY, signature
+  }).toString();
+
+  return new Promise((resolve, reject) => {
+    const r = https.request({
+      hostname: 'api.cloudinary.com',
+      path: `/v1_1/${CLOUDINARY_CLOUD}/raw/destroy`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    }, resp => {
+      let body = '';
+      resp.on('data', c => body += c);
+      resp.on('end', () => {
+        let json;
+        try { json = JSON.parse(body); }
+        catch (e) { return reject(new Error('Respuesta inválida de Cloudinary: ' + body)); }
+        if (json.result === 'ok' || json.result === 'not found') resolve(json);
+        else reject(new Error('Cloudinary no pudo borrarlo (' + (json.result || (json.error && json.error.message) || 'sin respuesta') + ')'));
+      });
+    });
+    r.on('error', reject);
+    r.write(postData);
+    r.end();
+  });
+}
+
+async function cargarProtocolos() {
+  if (!cloudinaryConfigurado()) return;
+  try {
+    const items = await cargarJsonsDeCarpeta(CARPETA_PROTOCOLOS);
+    protocolos = items.map(({ datos, publicId }) => ({ ...datos, _publicId: publicId }));
+    console.log(`Cloudinary: ${protocolos.length} protocolos cargados`);
+  } catch (e) {
+    console.error('Error cargando protocolos:', e.message);
+  }
+}
+
+// Limpia y valida lo que llega del formulario. Devuelve { error } o { protocolo }.
+function normalizarProtocolo(body) {
+  const texto = (v, max = 300) => String(v == null ? '' : v).trim().slice(0, max);
+  const nombre = texto(body.nombre, 120);
+  if (!nombre) return { error: 'El protocolo necesita un nombre' };
+
+  // Bloque evaluable: { evaluar, <campoTexto>, <campoOblig> }
+  const bloque = (b, campoTexto, campoOblig) => {
+    b = b || {};
+    const evaluar = !!b.evaluar;
+    return {
+      evaluar,
+      [campoTexto]: evaluar ? texto(b[campoTexto]) : '',
+      [campoOblig]: evaluar ? b[campoOblig] !== false : false
+    };
+  };
+
+  const pasos = (Array.isArray(body.pasos) ? body.pasos : [])
+    .map((p, i) => ({
+      id:       texto(p && p.id, 40) || `paso-${Date.now()}-${i}`,
+      texto:    texto(p && p.texto),
+      zona:     texto(p && p.zona, 60) || null,
+      ventana:  bloque(p && p.ventana,  'esperada', 'obligatoria'),
+      hallazgo: bloque(p && p.hallazgo, 'esperado', 'obligatorio')
+    }))
+    .filter(p => p.texto);
+  if (pasos.length === 0) return { error: 'Añade al menos un paso al checklist' };
+  for (let i = 0; i < pasos.length; i++) {
+    if (pasos[i].ventana.evaluar  && !pasos[i].ventana.esperada)  return { error: `Paso ${i + 1}: indica la ventana correcta` };
+    if (pasos[i].hallazgo.evaluar && !pasos[i].hallazgo.esperado) return { error: `Paso ${i + 1}: indica el hallazgo esperado` };
+  }
+
+  const diagnostico = bloque((body.evaluacion || {}).diagnostico, 'esperado', 'obligatorio');
+  if (diagnostico.evaluar && !diagnostico.esperado) return { error: 'Indica el diagnóstico esperado' };
+  const cr = body.criterios  || {};
+  const porcentaje = Math.round(Number(cr.porcentajeMinimo));
+  const tiempo     = Number(cr.tiempoMaxMin);
+
+  return {
+    protocolo: {
+      id:          texto(body.id, 60) || `protocolo-${Date.now()}`,
+      nombre,
+      descripcion: texto(body.descripcion),
+      casoId:      texto(body.casoId, 60) || null,
+      nivel:       NIVELES.includes(body.nivel) ? body.nivel : 'basico',
+      tipo:        TIPOS.includes(body.tipo) ? body.tipo : 'entrenamiento',
+      ordenObligatorio: !!body.ordenObligatorio,
+      pasos,
+      // Diagnóstico global del caso (se pregunta una vez al final)
+      evaluacion: { diagnostico },
+      criterios: {
+        porcentajeMinimo: Number.isFinite(porcentaje) ? Math.min(100, Math.max(0, porcentaje)) : 80,
+        tiempoMaxMin:     Number.isFinite(tiempo) && tiempo > 0 ? tiempo : null
+      },
+      actualizado: new Date().toISOString()
+    }
+  };
+}
+
+const sinPublicId = ({ _publicId, ...p }) => p;
+
+// ── API: listar protocolos (admin y pantallas de entrenamiento) ────
+app.get('/api/admin/protocolos', (req, res) => res.json(protocolos.map(sinPublicId)));
+app.get('/api/protocolos',       (req, res) => res.json(protocolos.map(sinPublicId)));
+
+// ── API: crear o actualizar protocolo ──────────────────────────────
+app.post('/api/admin/protocolos', async (req, res) => {
+  if (!cloudinaryConfigurado()) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  const { error, protocolo } = normalizarProtocolo(req.body || {});
+  if (error) return res.status(400).json({ ok: false, error });
+
+  try {
+    const publicIdReal = await subirJsonCloudinary(
+      `${CARPETA_PROTOCOLOS}/${protocolo.id}`, `${protocolo.id}.json`, protocolo
+    );
+    const enMemoria = { ...protocolo, _publicId: publicIdReal };
+    const idx = protocolos.findIndex(p => p.id === protocolo.id);
+    if (idx !== -1) protocolos[idx] = enMemoria;
+    else protocolos.push(enMemoria);
+    res.json({ ok: true, id: protocolo.id });
+  } catch (e) {
+    console.error('Error guardando protocolo:', e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ── API: borrar protocolo ──────────────────────────────────────────
+app.delete('/api/admin/protocolos/:id', async (req, res) => {
+  if (!cloudinaryConfigurado()) {
+    return res.status(500).json({ ok: false, error: 'Cloudinary no configurado' });
+  }
+  const id  = req.params.id;
+  const mem = protocolos.find(p => p.id === id);
+  try {
+    await borrarRawCloudinary((mem && mem._publicId) || `${CARPETA_PROTOCOLOS}/${id}.json`);
+    protocolos = protocolos.filter(p => p.id !== id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Error borrando protocolo:', id, e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ── API: verificar contraseña de admin ────────────────────────────
 app.post('/api/admin/auth', (req, res) => {
   const { pwd } = req.body;
@@ -535,7 +773,10 @@ app.post('/api/admin/auth', (req, res) => {
 
 // ── Salas ──────────────────────────────────────────────────────────
 // Cada sala tiene su propio estado y sus propios roles ocupados.
-// salas['ABCDE'] = { control: socket.id|null, eco: socket.id|null, estado: {...} }
+// Roles: control (instructor), eco (pantalla del alumno) y
+// entrenamiento (evaluador, pantalla E).
+// salas['ABCDE'] = { control, eco, entrenamiento: socket.id|null, estado: {...}, infoClip }
+const ROLES = ['control', 'eco', 'entrenamiento'];
 const salas = {};
 
 function obtenerOcrearSala(salaId) {
@@ -543,10 +784,18 @@ function obtenerOcrearSala(salaId) {
     salas[salaId] = {
       control: null,
       eco: null,
-      estado: { clip: null, congelado: false, negro: false }
+      entrenamiento: null,
+      estado: { clip: null, congelado: false, negro: false },
+      // Datos del clip que SOLO recibe el evaluador (zona, nombre, patológico).
+      // Se guardan aparte de "estado" para que nunca lleguen al alumno.
+      infoClip: null
     };
   }
   return salas[salaId];
+}
+
+function presencia(sala) {
+  return { control: !!sala.control, eco: !!sala.eco, entrenamiento: !!sala.entrenamiento };
 }
 
 io.on('connection', (socket) => {
@@ -555,13 +804,18 @@ io.on('connection', (socket) => {
   socket.on('comprobar-sala', (salaId) => {
     const sala = obtenerOcrearSala(salaId);
     socket.emit('estado-sala', {
-      controlOcupado: !!sala.control,
-      ecoOcupado: !!sala.eco
+      controlOcupado:       !!sala.control,
+      ecoOcupado:           !!sala.eco,
+      entrenamientoOcupado: !!sala.entrenamiento
     });
   });
 
   // Reservar un rol dentro de una sala
   socket.on('unirse-sala', ({ sala: salaId, rol }) => {
+    if (!ROLES.includes(rol)) {
+      socket.emit('unirse-resultado', { ok: false, motivo: 'rol-invalido' });
+      return;
+    }
     const sala = obtenerOcrearSala(salaId);
 
     if (sala[rol]) {
@@ -576,13 +830,17 @@ io.on('connection', (socket) => {
 
     socket.emit('unirse-resultado', { ok: true });
     socket.emit('estado-inicial', sala.estado);
+    if (rol === 'entrenamiento') socket.emit('info-clip', sala.infoClip);
 
-    // avisar al otro rol (si ya está) de que su compañero está presente
-    const otroRol = rol === 'control' ? 'eco' : 'control';
-    if (sala[otroRol]) {
-      io.to(sala[otroRol]).emit('companero-estado', { presente: true });
-      socket.emit('companero-estado', { presente: true });
+    // Control y eco se avisan entre sí (como antes)
+    if (rol === 'control' || rol === 'eco') {
+      const otroRol = rol === 'control' ? 'eco' : 'control';
+      if (sala[otroRol]) {
+        io.to(sala[otroRol]).emit('companero-estado', { presente: true });
+        socket.emit('companero-estado', { presente: true });
+      }
     }
+    io.to(salaId).emit('presencia-sala', presencia(sala));
   });
 
   socket.on('cambiar-clip', (clip) => {
@@ -591,8 +849,28 @@ io.on('connection', (socket) => {
     salas[salaId].estado.clip      = clip;
     salas[salaId].estado.congelado = false;
     salas[salaId].estado.negro     = false;
+    if (!clip) {
+      salas[salaId].infoClip = null;
+      if (salas[salaId].entrenamiento) io.to(salas[salaId].entrenamiento).emit('info-clip', null);
+    }
     io.to(salaId).emit('clip-cambiado', clip);
     io.to(salaId).emit('pantalla-negra', false);
+  });
+
+  // El control manda qué clip es (zona, nombre...). Solo se reenvía al
+  // evaluador: el alumno no debe poder ver el diagnóstico.
+  socket.on('info-clip', (info) => {
+    const salaId = socket.data.sala;
+    if (!salaId || !salas[salaId] || socket.data.rol !== 'control') return;
+    const limpio = info ? {
+      zona:       String(info.zona || ''),
+      zonaTitulo: String(info.zonaTitulo || ''),
+      nombre:     String(info.nombre || ''),
+      patologico: !!info.patologico,
+      t:          Date.now()
+    } : null;
+    salas[salaId].infoClip = limpio;
+    if (salas[salaId].entrenamiento) io.to(salas[salaId].entrenamiento).emit('info-clip', limpio);
   });
 
   socket.on('congelar', (valor) => {
@@ -623,16 +901,18 @@ io.on('connection', (socket) => {
     const salaId = socket.data.sala;
     const rol    = socket.data.rol;
     if (!salaId || !rol || !salas[salaId]) return;
+    const sala = salas[salaId];
 
-    salas[salaId][rol] = null;
+    sala[rol] = null;
 
-    const otroRol = rol === 'control' ? 'eco' : 'control';
-    if (salas[salaId][otroRol]) {
-      io.to(salas[salaId][otroRol]).emit('companero-estado', { presente: false });
+    if (rol === 'control' || rol === 'eco') {
+      const otroRol = rol === 'control' ? 'eco' : 'control';
+      if (sala[otroRol]) io.to(sala[otroRol]).emit('companero-estado', { presente: false });
     }
+    io.to(salaId).emit('presencia-sala', presencia(sala));
 
     // limpiar la sala de memoria si se queda vacía
-    if (!salas[salaId].control && !salas[salaId].eco) {
+    if (!sala.control && !sala.eco && !sala.entrenamiento) {
       delete salas[salaId];
     }
   });
@@ -642,4 +922,5 @@ server.listen(PORT, async () => {
   console.log(`\nEcoApp SimIA → http://localhost:${PORT}\n`);
   await cargarClipsDeCloudinary();
   await cargarCasosClinicos();
+  await cargarProtocolos();
 });

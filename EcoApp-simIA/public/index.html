@@ -291,6 +291,10 @@
         <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>Monitor de Eco</span>
         <span class="estado" id="estado-eco">comprobando...</span>
       </button>
+      <button class="rol-btn" id="rol-entrenamiento" disabled>
+        <span><svg class="icon-inline" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6a1 1 0 011 1v1H8V5a1 1 0 011-1z"/><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2"/><polyline points="8.5 13 10.5 15 15.5 10"/></svg>Monitor de Evaluación</span>
+        <span class="estado" id="estado-entrenamiento">comprobando...</span>
+      </button>
 
       <button class="btn-volver" id="btn-volver-3">← Volver al lobby</button>
     </div>
@@ -322,12 +326,10 @@
     function comprobarRoles() {
       document.getElementById('sala-mostrada').textContent = sala;
 
-      const controlBtn = document.getElementById('rol-control');
-      const ecoBtn      = document.getElementById('rol-eco');
-      document.getElementById('estado-control').textContent = 'comprobando...';
-      document.getElementById('estado-eco').textContent = 'comprobando...';
-      controlBtn.disabled = true;
-      ecoBtn.disabled = true;
+      ['control', 'eco', 'entrenamiento'].forEach(rol => {
+        document.getElementById('estado-' + rol).textContent = 'comprobando...';
+        document.getElementById('rol-' + rol).disabled = true;
+      });
 
       socket.emit('comprobar-sala', sala);
     }
@@ -335,16 +337,15 @@
     const ICONO_CANDADO = '<svg class="icon-inline" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
 
     socket.on('estado-sala', (datos) => {
-      const controlBtn = document.getElementById('rol-control');
-      const ecoBtn      = document.getElementById('rol-eco');
-      controlBtn.disabled = datos.controlOcupado;
-      ecoBtn.disabled = datos.ecoOcupado;
-      document.getElementById('estado-control').innerHTML = datos.controlOcupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
-      document.getElementById('estado-eco').innerHTML = datos.ecoOcupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
+      ['control', 'eco', 'entrenamiento'].forEach(rol => {
+        const ocupado = !!datos[rol + 'Ocupado'];
+        document.getElementById('rol-' + rol).disabled = ocupado;
+        document.getElementById('estado-' + rol).innerHTML = ocupado ? ICONO_CANDADO + ' ocupado' : 'disponible';
+      });
     });
 
     function elegirRol(rol) {
-      const destino = rol === 'control' ? '/control.html' : '/eco.html';
+      const destino = { control: '/control.html', eco: '/eco.html', entrenamiento: '/entrenamiento.html' }[rol];
       window.location.href = `${destino}?sala=${encodeURIComponent(sala)}`;
     }
 
@@ -374,6 +375,7 @@
 
     document.getElementById('rol-control').addEventListener('click', () => elegirRol('control'));
     document.getElementById('rol-eco').addEventListener('click', () => elegirRol('eco'));
+    document.getElementById('rol-entrenamiento').addEventListener('click', () => elegirRol('entrenamiento'));
 
     // Al volver al lobby, limpiamos ?sala de la URL para que un refresco
     // no vuelva a saltar directo al selector de monitor.
